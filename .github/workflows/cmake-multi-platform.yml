@@ -1,0 +1,37 @@
+name: Build and test
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build-solutions-ubuntu:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: fetch dependencies
+      run: |
+        sudo apt-get install libgtest-dev clang-format clang-tidy
+    - name: install glog 0.7.1 manually
+      run: |
+        git clone --depth 1 --branch v0.7.1 https://github.com/google/glog.git
+        cd glog
+        cmake -S . -B build -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release
+        cmake --build build -j4
+        sudo cmake --build build --target install
+        sudo ldconfig # Обновляем кэш библиотек
+    - name: cmake
+      run: |
+        mkdir build
+        cd build
+        cmake ..
+    - name: make
+      run: |
+        cd build
+        make
+    - name: test
+      run: |
+        cd build
+        ./tests/unit_tests
