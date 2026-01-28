@@ -1,2 +1,6 @@
+.gitignore
 build
 .cache
+.clang-format
+.clang-tidy
+.pre-commit-config.yaml
