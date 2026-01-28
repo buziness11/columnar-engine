@@ -19,7 +19,6 @@ protected:
 };
 
 TEST_F(CsvReaderTest, BasicWork) {
-    ASSERT_TRUE(false);
     CSVReader cr(CreateTestStream("0,german,20\r\n1,igor,19"), 3);
     std::vector<std::string> expected{"0", "german", "20"};
     std::vector<std::string> actual = cr.GetRow();
