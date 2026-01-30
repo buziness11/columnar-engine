@@ -3,14 +3,17 @@
 #include <cstdint>
 #include <exception>
 #include <glog/logging.h>
-#include <fstream>
 #include <istream>
-#include <stdexcept>
+#include "batch.h"
 
 const size_t kMaxStringLenght = 1ull << 31;
 
-CSVReader::CSVReader(std::istream *input, uint8_t cnt_columns, char delim, bool have_header)
-    : input_(input), cnt_columns_(cnt_columns), delim_(delim), have_header_(have_header) {
+CSVReader::CSVReader(std::istream *input, uint8_t cnt_columns, char delim,
+                     bool have_header)
+    : input_(input),
+      cnt_columns_(cnt_columns),
+      delim_(delim),
+      have_header_(have_header) {
 }
 
 std::vector<std::string> CSVReader::GetRow() {
@@ -21,11 +24,14 @@ std::vector<std::string> CSVReader::GetRow() {
     bool is_quote = false;
     int sym = input_->get();
     std::vector<std::string> res;
+    res.reserve(cnt_columns_);
     std::string s;
-    while (!(sym == EOF || (sym == '\r' && input_->peek() == '\n' && !is_quote))) {
+    while (!(sym == EOF ||
+             (sym == '\r' && input_->peek() == '\n' && !is_quote))) {
         if (s.size() > kMaxStringLenght) {
-            DLOG(ERROR) << "i can't work with too big data, one cell is more then "
-                        << kMaxStringLenght << " bytes";
+            DLOG(ERROR)
+                << "i can't work with too big data, one cell is more then "
+                << kMaxStringLenght << " bytes";
             throw std::exception();
         }
         if (sym == delim_ && !is_quote) {
@@ -54,6 +60,9 @@ std::vector<std::string> CSVReader::GetRow() {
         throw std::exception();
     }
     return res;
+}
+
+Butch CSVReader::GetButch(size_t batch) {
 }
 
 bool CSVReader::IsRead() {
