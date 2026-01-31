@@ -34,4 +34,5 @@ jobs:
     - name: test
       run: |
         cd build
-        ./tests/unit_tests
+        ./tests/csv_tests
+        ./tests/transform_tests
