@@ -25,7 +25,7 @@ private:
 class CSVWriter {
 public:
     CSVWriter(std::fstream *output);
-    void WriteBatch(Batch);
+    void WriteBatch(Batch, char delim = ',');
 
 private:
     std::fstream *out_;

@@ -120,7 +120,7 @@ std::string ScreenString(std::string&& s) {
     return res;
 }
 
-void CSVWriter::WriteBatch(Batch bat) {
+void CSVWriter::WriteBatch(Batch bat, char delim) {
     DLOG(INFO) << "write batch";
     bat.NewTypes(std::vector<Types>(bat.GetCntColumns(), Types::kString));
     std::vector<std::vector<std::string>> batch_data(bat.GetCntColumns());
@@ -139,25 +139,24 @@ void CSVWriter::WriteBatch(Batch bat) {
                               }},
                    a.GetData());
     }
-
-    std::cout << bat.GetColumnSize() << ' ' << bat.GetCntColumns() << '\n';
-
-    for (auto i : batch_data) {
-        for (auto j : i) {
-            std::cout << j << ' ';
-        }
-        std::cout << '\n';
+    if (batch_data.empty()) {
+        DLOG(WARNING) << "write empty batch in csv";
+        return;
     }
 
-    for (size_t i = 0; i < bat.GetColumnSize(); ++i) {
-        for (size_t j = 0; j < bat.GetCntColumns(); ++j) {
-            std::string screened_str =
-                ScreenString(std::move(batch_data[j][i]));
+    for (size_t i = 0; i < batch_data[0].size(); ++i) {
+        std::string screened_str;
+        for (int j = 0; j < static_cast<int>(batch_data.size()) - 1; ++j) {
+            screened_str = ScreenString(std::move(batch_data[j][i]));
             DLOG_FIRST_N(INFO, 12) << i << ' ' << j << ' ' << screened_str;
             out_->write(screened_str.data(), screened_str.size());
+            out_->put(delim);
         }
+        screened_str = ScreenString(std::move(batch_data.back()[i]));
+        out_->write(screened_str.data(), screened_str.size());
         out_->put('\r');
         out_->put('\n');
     }
+    out_->flush();
     DLOG(INFO) << "wrote batch";
 }

@@ -17,11 +17,6 @@ class BZNReader {
 public:
     BZNReader(std::fstream* file);
     Batch Read();
-
-    void TranslateToCsv(std::vector<std::string> column_names = {},
-                        std::string table_name = "table_res.csv",
-                        std::string schema_name = "schema_res.csv");
-
     bool IsReaded();
 
 private:
