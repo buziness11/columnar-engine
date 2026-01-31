@@ -46,7 +46,9 @@ void Column::TranslateTo(Types t) {
 }
 
 size_t Column::GetSize() {
-    return std::visit([](auto&& v) { return v.size(); }, data_);
+    size_t res = 0;
+    std::visit([&res](auto&& v) { res = v.size(); }, data_);
+    return res;
 }
 
 void Column::PrintCol() {

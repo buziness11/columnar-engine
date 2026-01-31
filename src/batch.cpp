@@ -46,7 +46,7 @@ size_t Batch::GetCntColumns() {
 }
 
 size_t Batch::GetColumnSize() {
-    if (data_.size() == 0) {
+    if (data_.empty()) {
         return 0;
     } else {
         return data_[0].GetSize();
