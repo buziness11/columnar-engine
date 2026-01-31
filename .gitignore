@@ -4,3 +4,4 @@ build
 .clang-format
 .clang-tidy
 .pre-commit-config.yaml
+tests/makecrlf.py
