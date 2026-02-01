@@ -5,3 +5,8 @@ build
 .clang-tidy
 .pre-commit-config.yaml
 tests/makecrlf.py
+documents/*
+!documents/coursework.tex
+!documents/refs.bib
+!documents/title_kr.tex
+!documents/coursework.pdf
