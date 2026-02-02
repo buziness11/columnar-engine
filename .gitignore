@@ -10,3 +10,4 @@ documents/*
 !documents/refs.bib
 !documents/title_kr.tex
 !documents/coursework.pdf
+.DS_Store
