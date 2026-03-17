@@ -27,21 +27,14 @@ int64_t ReadInt64(std::fstream* f) {
 }
 
 BZNReader::BZNReader(std::fstream* file) : ma_format_(file) {
-    DLOG(INFO) << "Getting metasize ...";
     ma_format_->seekg(0, std::ios::beg);
     int64_t metasize = ReadInt64(ma_format_);
     ma_format_->seekg(-metasize, std::ios::end);
 
-    DLOG(INFO) << "Getting schema ...";
     BuildSchema();
-    DLOG(INFO) << "Getting offsets ...";
     GetMetaOffset();
     ma_format_->seekg(-metasize, std::ios::end);
     offsets_.emplace_back(ma_format_->tellg());
-    DLOG_FIRST_N(INFO, 1) << "Offsets";
-    for (auto i : offsets_) {
-        DLOG_FIRST_N(INFO, 10) << i;
-    }
 
     ma_format_->seekg(8, std::ios::beg);
     cur_batch_ = 0;
@@ -92,23 +85,27 @@ bool BZNReader::IsReaded() {
 
 Column ReadColumn(std::fstream* file, Types t, int64_t end) {
     Column res;
+    int64_t tellg_nw = file->tellg();  // less syscalls
     switch (t) {
         case Types::kInt64_t: {
             std::vector<int64_t> v;
-            while (file->tellg() < end) {
+            while (tellg_nw < end) {
                 v.emplace_back(ReadInt64(file));
+                tellg_nw += sizeof(int64_t);
             }
             res = Column(v);
             break;
         }
         case Types::kString: {
             std::vector<std::string> v;
-            while (file->tellg() < end) {
+            while (tellg_nw < end) {
                 std::string s;
                 while (file->peek() != kStringDelimiter) {
                     s.push_back(file->get());
+                    tellg_nw++;
                 }
                 file->get();
+                tellg_nw++;
                 v.emplace_back(s);
             }
             res = Column(v);
@@ -132,14 +129,12 @@ Batch BZNReader::Read() {
     std::vector<Column> bat;
 
     for (size_t i = 0; i < schema_.GetCntColumns() - 1; ++i) {
-        bat.emplace_back(ReadColumn(ma_format_, schema_.GetType(i),
-                                    batch_offset[i + 1]));
-        bat.back().PrintCol();
+        bat.emplace_back(
+            ReadColumn(ma_format_, schema_.GetType(i), batch_offset[i + 1]));
     }
-    bat.emplace_back(ReadColumn(
-        ma_format_, schema_.GetType(schema_.GetCntColumns() - 1),
-        offsets_[++cur_batch_]));
-    bat.back().PrintCol();
+    bat.emplace_back(ReadColumn(ma_format_,
+                                schema_.GetType(schema_.GetCntColumns() - 1),
+                                offsets_[++cur_batch_]));
     return Batch(schema_, std::move(bat));
 }
 
@@ -181,17 +176,14 @@ BZNWriter::BZNWriter(Schema sch, std::fstream* file)
 }
 
 void BZNWriter::Write(Batch b) {
-    DLOG(INFO) << "Writer take batch";
     if (locked_) {
         DLOG(ERROR) << "Write batches closed";
         throw std::exception();
     }
 
     b.NewSchema(schema_);
-    DLOG(INFO) << "Success new scheme";
     offsets_.emplace_back(ma_format_->tellp());
-    ma_format_->seekp((sizeof(int64_t)) * b.GetCntColumns(),
-                      std::ios::cur);
+    ma_format_->seekp((sizeof(int64_t)) * b.GetCntColumns(), std::ios::cur);
     std::vector<int64_t> batch_offset;
     for (size_t i = 0; i < b.GetCntColumns(); ++i) {
         batch_offset.emplace_back(ma_format_->tellp());
@@ -221,7 +213,6 @@ void BZNWriter::WriteMetaInfo() {
     metasize += WriteCol(ma_format_, Column(std::move(t))) + 1;
     ma_format_->put(kMetaDelimiter);
 
-    DLOG_FIRST_N(INFO, 1) << offsets_.size();
     metasize += WriteCol(ma_format_, Column(std::move(offsets_)));
 
     ma_format_->seekp(0, std::ios::beg);

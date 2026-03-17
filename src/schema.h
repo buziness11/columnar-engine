@@ -15,7 +15,7 @@ public:
     ~Schema() = default;
 
     Schema();
-    Schema(std::fstream* schema, char schema_delim = ',');
+    Schema(std::fstream* schema, char schema_delim = ',', bool lf = true);
     Schema(std::vector<std::string> names, std::vector<Types> types);
 
     const std::vector<std::string>& GetNames() const;
