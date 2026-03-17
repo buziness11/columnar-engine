@@ -4,7 +4,7 @@
 #include "column.h"
 #include "schema.h"
 
-const size_t kBatchRowSize = 1'000'000;
+const size_t kBatchRowSize = 500'000;
 
 class Batch {
 public:

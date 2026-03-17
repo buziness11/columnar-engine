@@ -30,7 +30,6 @@ void Column::TranslateTo(Types t) {
                            case Types::kInt64_t: {
                                std::vector<int64_t> newvec(v.size());
                                for (size_t i = 0; i < v.size(); ++i) {
-                                   DLOG_FIRST_N(INFO, 2) << v[i];
                                    newvec[i] = stoll(v[i]);
                                }
                                data_ = std::move(newvec);

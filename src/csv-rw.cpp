@@ -1,4 +1,5 @@
 #include "csv-rw.h"
+#include <functional>
 #include <iostream>
 #include <cstddef>
 #include <cstdint>
@@ -12,14 +13,22 @@
 #include "schema.h"
 #include "types.h"
 
-const size_t kMaxStringLenght = 1ull << 31;
+const size_t kMaxStringLenght = 1ull << 20;
 
-CSVReader::CSVReader(std::fstream* input, uint8_t cnt_columns, char delim,
-                     bool have_header)
-    : input_(input), cnt_columns_(cnt_columns), delim_(delim) {
+CSVReader::CSVReader(std::fstream* input, size_t cnt_columns, char delim,
+                     bool lf, bool have_header)
+    : input_(input), cnt_columns_(cnt_columns), delim_(delim), lf_(lf) {
     if (have_header) {
         GetRow();
     }
+}
+
+inline bool PredicateCRLF(int sym, int peek, bool is_quote) {
+    return !(sym == EOF || (sym == '\r' && peek == '\n' && !is_quote));
+}
+
+inline bool PredicateLF(int sym, int, bool is_quote) {
+    return !(sym == EOF || (sym == '\n' && !is_quote));
 }
 
 std::vector<std::string> CSVReader::GetRow() {
@@ -32,8 +41,17 @@ std::vector<std::string> CSVReader::GetRow() {
     std::vector<std::string> res;
     res.reserve(cnt_columns_);
     std::string s;
-    while (!(sym == EOF ||
-             (sym == '\r' && input_->peek() == '\n' && !is_quote))) {
+    // DLOG(INFO) << "Read str";
+    std::function<bool(int, int, bool)> predicate = PredicateLF;
+    if (!lf_) {
+        predicate = PredicateCRLF;
+    }
+    while (predicate(sym, input_->peek(), is_quote)) {
+        if (res.size() > cnt_columns_) {
+            DLOG(ERROR) << "Stop reading, mb wrong csv format\ncnt columns neq "
+                           "cnt readed csv";
+            throw std::exception();
+        }
         if (s.size() > kMaxStringLenght) {
             DLOG(ERROR)
                 << "i can't work with too big data, one cell is more then "
@@ -55,7 +73,9 @@ std::vector<std::string> CSVReader::GetRow() {
         }
         sym = input_->get();
     }
-    input_->get();
+    if (!lf_) {
+        input_->get();
+    }
     if (input_->peek() == EOF) {
         input_->get();
     }
@@ -68,11 +88,11 @@ std::vector<std::string> CSVReader::GetRow() {
         DLOG(ERROR) << "cnt columns neq cnt readed csv";
         throw std::exception();
     }
+    // DLOG(INFO) << "Readed str";
     return res;
 }
 
 Batch CSVReader::GetBatch(size_t batch_row_size) {
-    DLOG(INFO) << "CSVReader give batch";
     if (IsReaded()) {
         DLOG(ERROR) << "CSV V S E";
         throw std::exception();
@@ -105,7 +125,7 @@ bool CSVReader::IsReaded() {
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-CSVWriter::CSVWriter(std::fstream* output) : out_(output) {
+CSVWriter::CSVWriter(std::fstream* output, bool lf) : out_(output), lf_(lf) {
 }
 
 std::string ScreenString(std::string&& s) {
@@ -121,7 +141,6 @@ std::string ScreenString(std::string&& s) {
 }
 
 void CSVWriter::WriteBatch(Batch bat, char delim) {
-    DLOG(INFO) << "write batch";
     bat.NewTypes(std::vector<Types>(bat.GetCntColumns(), Types::kString));
     std::vector<std::vector<std::string>> batch_data(bat.GetCntColumns());
 
@@ -148,15 +167,15 @@ void CSVWriter::WriteBatch(Batch bat, char delim) {
         std::string screened_str;
         for (int j = 0; j < static_cast<int>(batch_data.size()) - 1; ++j) {
             screened_str = ScreenString(std::move(batch_data[j][i]));
-            DLOG_FIRST_N(INFO, 12) << i << ' ' << j << ' ' << screened_str;
             out_->write(screened_str.data(), screened_str.size());
             out_->put(delim);
         }
         screened_str = ScreenString(std::move(batch_data.back()[i]));
         out_->write(screened_str.data(), screened_str.size());
-        out_->put('\r');
+        if (!lf_) {
+            out_->put('\r');
+        }
         out_->put('\n');
     }
     out_->flush();
-    DLOG(INFO) << "wrote batch";
 }
