@@ -15,9 +15,9 @@ std::string hits_scheme_csv_way =
     TEST_DATA_DIR + std::string("hits_scheme.csv");
 
 std::string basic_test_csv_way_crlf =
-    TEST_DATA_DIR + std::string("basic_test.csv");
+    TEST_DATA_DIR + std::string("basic_test_crlf.csv");
 std::string basic_scheme_csv_way =
-    TEST_DATA_DIR + std::string("basic_scheme.csv");
+    TEST_DATA_DIR + std::string("basic_scheme_crlf.csv");
 
 class CsvReaderTest : public ::testing::Test {
 protected:
