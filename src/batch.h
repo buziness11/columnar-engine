@@ -4,8 +4,6 @@
 #include "column.h"
 #include "schema.h"
 
-const size_t kBatchRowSize = 500'000;
-
 class Batch {
 public:
     Batch() = default;
