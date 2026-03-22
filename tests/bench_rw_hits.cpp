@@ -46,7 +46,4 @@ TEST(Hits, HitsSample) {
     while (!bzn_r.IsReaded()) {
         csv_w.WriteBatch(bzn_r.Read());
     }
-
-    std::fstream outfile("output.csv", std::ios::in | std::ios::binary);
-    CSVReader out_r(&outfile, 4);
 }

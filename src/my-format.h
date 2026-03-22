@@ -8,11 +8,6 @@
 #include <cstddef>
 #include <fstream>
 
-const char kMetaDelimiter = '\x1E';
-const char kStringDelimiter = '\x1F';
-
-int64_t WriteCol(std::fstream*, Column&&);
-
 class BZNReader {
 public:
     BZNReader(std::fstream* file);
@@ -20,12 +15,12 @@ public:
     bool IsReaded();
 
 private:
-    void GetMetaOffset();
+    void GetMetaOffset(int64_t file_end);
     void BuildSchema();
     std::vector<int64_t> GetMetaBatchOffset();
     std::vector<std::string> GetMetaString();
     std::fstream* ma_format_;
-    std::vector<int64_t> offsets_;
+    std::vector<int64_t> bzn_file_offsets_;
     Schema schema_;
     size_t cur_batch_;
 };
@@ -39,7 +34,7 @@ public:
 private:
     Schema schema_;
     std::fstream* ma_format_;
-    std::vector<int64_t> offsets_;
-    size_t batch_row_size_;
+    std::vector<int64_t> bzn_file_offsets_;
+    // size_t batch_row_size_;
     bool locked_;
 };

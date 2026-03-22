@@ -6,6 +6,7 @@
 #include <ostream>
 #include <vector>
 #include "batch.h"
+#include "rwconsts.h"
 
 // follow RFC 4180 standart if crlf
 class CSVReader {

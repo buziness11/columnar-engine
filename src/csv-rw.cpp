@@ -2,7 +2,6 @@
 #include <functional>
 #include <iostream>
 #include <cstddef>
-#include <cstdint>
 #include <cstdio>
 #include <exception>
 #include <glog/logging.h>
@@ -12,8 +11,7 @@
 #include "column.h"
 #include "schema.h"
 #include "types.h"
-
-const size_t kMaxStringLenght = 1ull << 20;
+#include "rwconsts.h"
 
 CSVReader::CSVReader(std::fstream* input, size_t cnt_columns, char delim,
                      bool lf, bool have_header)
@@ -41,7 +39,6 @@ std::vector<std::string> CSVReader::GetRow() {
     std::vector<std::string> res;
     res.reserve(cnt_columns_);
     std::string s;
-    // DLOG(INFO) << "Read str";
     std::function<bool(int, int, bool)> predicate = PredicateLF;
     if (!lf_) {
         predicate = PredicateCRLF;
@@ -52,10 +49,10 @@ std::vector<std::string> CSVReader::GetRow() {
                            "cnt readed csv";
             throw std::exception();
         }
-        if (s.size() > kMaxStringLenght) {
+        if (s.size() > kMaxStringLenghtCsvSize) {
             DLOG(ERROR)
                 << "i can't work with too big data, one cell is more then "
-                << kMaxStringLenght << " bytes";
+                << kMaxStringLenghtCsvSize << " bytes";
             throw std::exception();
         }
         if (sym == delim_ && !is_quote) {
@@ -88,7 +85,6 @@ std::vector<std::string> CSVReader::GetRow() {
         DLOG(ERROR) << "cnt columns neq cnt readed csv";
         throw std::exception();
     }
-    // DLOG(INFO) << "Readed str";
     return res;
 }
 
@@ -110,7 +106,7 @@ Batch CSVReader::GetBatch(size_t batch_row_size) {
     }
     std::vector<Column> columns(cnt_columns_);
     for (size_t i = 0; i < cnt_columns_; ++i) {
-        columns[i] = std::move(batch[i]);
+        columns[i] = Column(batch[i], Types::kString);
     }
     return Batch(Schema(std::vector<std::string>(cnt_columns_, ""),
                         std::vector<Types>(cnt_columns_, Types::kString)),
@@ -130,12 +126,7 @@ CSVWriter::CSVWriter(std::fstream* output, bool lf) : out_(output), lf_(lf) {
 
 std::string ScreenString(std::string&& s) {
     std::string res = "\"";
-    for (size_t i = 0; i < s.size(); ++i) {
-        res.push_back(s[i]);
-        if (s[i] == '\"') {
-            res.push_back(i);
-        }
-    }
+    res += s;
     res.push_back('\"');
     return res;
 }

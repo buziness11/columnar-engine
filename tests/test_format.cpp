@@ -23,23 +23,23 @@ TEST(BatchWorks, BasicWorkCRLF) {
                                                    {"5", "1", "second", "2"},
                                                    {"8", "17", "third", "2"}};
     for (auto batch_size : batch_sizes) {
-        // DLOG(INFO) << "Get schema";
+        DLOG(INFO) << "Get schema";
         std::fstream schema_file(basic_scheme_csv_way_crlf,
                                  std::ios::in | std::ios::binary);
         Schema schema(&schema_file, ',', false);  // basic_scheme crlf
 
-        // DLOG(INFO) << "Make reader";
+        DLOG(INFO) << "Make reader";
         std::fstream table(basic_test_csv_way_crlf,
                            std::ios::in | std::ios::binary);
         CSVReader csv_r(&table, 4, ',', false);  // basic_table crlf
 
-        // DLOG(INFO) << "Make my format";
+        DLOG(INFO) << "Make my format";
         std::fstream maformat_file("data.bzn", std::ios::out | std::ios::in |
                                                    std::ios::trunc |
                                                    std::ios::binary);
         BZNWriter bzn_w(schema, &maformat_file);
 
-        // DLOG(INFO) << "Write my format";
+        DLOG(INFO) << "Write my format";
         while (!csv_r.IsReaded()) {
             if (!batch_size) {
                 bzn_w.Write(csv_r.GetBatch());
@@ -49,14 +49,14 @@ TEST(BatchWorks, BasicWorkCRLF) {
         }
         bzn_w.WriteMetaInfo();
 
-        // DLOG(INFO) << "Build bzn reader my format";
+        DLOG(INFO) << "Build bzn reader my format";
         BZNReader bzn_r(&maformat_file);
 
         std::fstream res_file("output.csv", std::ios::out | std::ios::in |
                                                 std::ios::trunc |
                                                 std::ios::binary);
 
-        // DLOG(INFO) << "My format to csv";
+        DLOG(INFO) << "My format to csv";
         CSVWriter csv_w(&res_file, false);
         while (!bzn_r.IsReaded()) {
             csv_w.WriteBatch(bzn_r.Read());
@@ -197,4 +197,19 @@ TEST(Hits, HitsSmallGood) {
         }
     }
     ASSERT_TRUE(out_r.IsReaded() && out_expected.IsReaded());
+}
+
+TEST(Types, TypesTranslation) {
+    // CSVReader cr(CreateTestStream("0,german,20\r\n1,igor,19"), 3);
+    std::vector<Types> tps = {Types::kInt16_t, Types::kInt32_t,
+                              Types::kInt64_t, Types::kString,
+                              Types::kDate,    Types::kTimestamp};
+    std::vector<std::string> strs = {"int16",  "int32", "int64",
+                                     "string", "DATE",  "TIMESTAMP"};
+    for (size_t i = 0; i < tps.size(); ++i) {
+        ASSERT_EQ(tps[i], StringToType(strs[i]));
+        ASSERT_EQ(strs[i], TypeToString(StringToType(strs[i])));
+        ASSERT_EQ(strs[i], TypeToString(tps[i]));
+        ASSERT_EQ(tps[i], StringToType(TypeToString(tps[i])));
+    }
 }
