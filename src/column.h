@@ -69,7 +69,7 @@ public:
     ColumnType& GetData() &;
     ColumnType&& GetData() &&;
     void TranslateTo(Types);
-    size_t GetSize();
+    size_t GetSize() const;
     Types GetType();
 
     void PrintCol();

@@ -63,7 +63,7 @@ void Column::TranslateTo(Types t) {
     type_ = t;
 }
 
-size_t Column::GetSize() {
+size_t Column::GetSize() const {
     size_t res = 0;
     std::visit([&res](auto&& v) { res = v.size(); }, data_);
     return res;

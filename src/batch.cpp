@@ -41,11 +41,11 @@ const Schema& Batch::GetSchema() const {
     return schema_;
 }
 
-size_t Batch::GetCntColumns() {
+size_t Batch::GetCntColumns() const {
     return data_.size();
 }
 
-size_t Batch::GetColumnSize() {
+size_t Batch::GetColumnSize() const {
     if (data_.empty()) {
         return 0;
     } else {
@@ -55,4 +55,18 @@ size_t Batch::GetColumnSize() {
 
 Column& Batch::GetColumnIdx(size_t i) {
     return data_[i];
+}
+
+Column Batch::GetColumnByName(const std::string& s) const {
+    for (size_t i = 0; i < schema_.GetCntColumns(); ++i) {
+        if (schema_.GetNames()[i] == s) {
+            return data_[i];
+        }
+    }
+    DLOG(INFO) << "column with name " << s << " doesnt exists";
+    throw std::exception();
+}
+
+const std::vector<Column>& Batch::GetBatchData() const {
+    return data_;
 }
