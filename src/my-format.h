@@ -11,8 +11,9 @@
 class BZNReader {
 public:
     BZNReader(std::fstream* file);
-    Batch Read();
+    Batch Read(const std::vector<std::string>& column_peek = {});
     bool IsReaded();
+    size_t GetCntColumns();
 
 private:
     void GetMetaOffset(int64_t file_end);

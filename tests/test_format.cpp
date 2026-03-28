@@ -132,6 +132,45 @@ TEST(BatchWorks, BasicWorkLF) {
     }
 }
 
+
+TEST(BZNReader, CheckReadByNames) {
+
+        std::fstream schema_file(basic_scheme_csv_way_lf,
+                                 std::ios::in | std::ios::binary);
+        Schema schema(&schema_file);
+
+        DLOG(INFO) << "Make my format";
+        std::fstream maformat_file("data.bzn", std::ios::out | std::ios::in |
+                                                   
+                                                   std::ios::binary);
+
+        // DLOG(INFO) << "Build bzn reader my format";
+        BZNReader bzn_r(&maformat_file);
+
+        std::fstream res_file("output.csv", std::ios::out | std::ios::in |
+                                                std::ios::trunc |
+                                                std::ios::binary);
+
+        DLOG(INFO) << "My format to csv";
+        CSVWriter csv_w(&res_file);
+        while (!bzn_r.IsReaded()) {
+        DLOG(INFO) << "write";
+            csv_w.WriteBatch(bzn_r.Read({"name123", "a"}));
+        }
+
+        std::vector<std::vector<std::string>> expected{{"1", "first"},
+                                                    {"5", "second"},
+                                                    {"8", "third"}};
+
+
+        std::fstream outfile("output.csv", std::ios::in | std::ios::binary);
+        CSVReader out_r(&outfile, 2);
+        for (size_t i = 0; i < 3; ++i) {
+            ASSERT_EQ(out_r.GetRow(), expected[i]);
+        }
+        ASSERT_TRUE(out_r.IsReaded());
+}
+
 std::string hits_small_csv_way_lf =
     TEST_DATA_DIR + std::string("hits_small_sample.csv");
 std::string hits_scheme_csv_way_lf =
