@@ -102,16 +102,22 @@ Batch BZNReader::Read(const std::vector<std::string>& column_peek) {
     std::vector<int64_t> column_offset = GetMetaBatchOffset();
     column_offset.emplace_back(bzn_file_offsets_[++cur_batch_]);
     std::vector<Column> bat;
+    std::vector<Types> types;
+    std::vector<std::string> names;
 
     for (size_t i = 0; i < schema_.GetCntColumns(); ++i) {
-        if (column_peek.empty() || find(column_peek.begin(), column_peek.end(), schema_.GetNames()[i]) != column_peek.end()) {  // TODO
+        if (column_peek.empty() ||
+            find(column_peek.begin(), column_peek.end(),
+                 schema_.GetNames()[i]) != column_peek.end()) {  // TODO
             bat.emplace_back(ReadColFromBzn(ma_format_, schema_.GetType(i),
                                             column_offset[i + 1]));
+            types.emplace_back(schema_.GetTypes()[i]);
+            names.emplace_back(schema_.GetNames()[i]);
         } else {
             ma_format_->seekg(column_offset[i + 1]);
         }
     }
-    return Batch(schema_, std::move(bat));
+    return Batch(Schema(std::move(names), std::move(types)), std::move(bat));
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
