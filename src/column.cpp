@@ -13,13 +13,8 @@ ColumnType&& Column::GetData() && {
     return std::move(data_);
 }
 
-Column::Column(Column&& ot) : data_(std::move(ot.data_)), type_(ot.type_) {
-}
-
-Column& Column::operator=(Column&& ot) {
-    data_ = std::move(ot.data_);
-    type_ = ot.type_;
-    return *this;
+const ColumnType& Column::GetData() const {
+    return data_;
 }
 
 template <Types Src, Types Dst, typename InputType>
@@ -69,7 +64,7 @@ size_t Column::GetSize() const {
     return res;
 }
 
-Types Column::GetType() {
+Types Column::GetType() const {
     return type_;
 }
 

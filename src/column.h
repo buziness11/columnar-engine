@@ -49,9 +49,9 @@ class Column {
 public:
     Column() = default;
     Column(const Column&) = default;
-    Column(Column&&);
+    Column(Column&&) = default;
     Column& operator=(const Column&) = default;
-    Column& operator=(Column&&);
+    Column& operator=(Column&&) = default;
     ~Column() = default;
 
     template <typename T>
@@ -68,9 +68,10 @@ public:
 
     ColumnType& GetData() &;
     ColumnType&& GetData() &&;
+    const ColumnType& GetData() const;
     void TranslateTo(Types);
     size_t GetSize() const;
-    Types GetType();
+    Types GetType() const;
 
     void PrintCol();
 
