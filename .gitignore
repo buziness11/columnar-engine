@@ -6,5 +6,6 @@ build
 .pre-commit-config.yaml
 tests/makecrlf.py
 build-release/
+build-perf/
 build_perf/
 tests/data/hits_sample.csv
