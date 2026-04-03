@@ -15,7 +15,8 @@ public:
     size_t GetCntColumns() const;
     size_t GetColumnSize() const;
     Column& GetColumnIdx(size_t i);
-    Column GetColumnByName(const std::string&) const;
+    const Column& GetColumnIdx(size_t i) const;
+    const Column& GetColumnByName(const std::string&) const;
     const std::vector<Column>& GetBatchData() const;
 
 private:

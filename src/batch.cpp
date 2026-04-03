@@ -8,18 +8,27 @@
 #include "schema.h"
 #include "types.h"
 
-Batch::Batch(Schema&& schema, std::vector<Column>&& data)
-    : schema_(std::move(schema)), data_(std::move(data)) {
+Batch::Batch(Schema&& sch, std::vector<Column>&& col)
+    : schema_(std::move(sch)), data_(std::move(col)) {
+    if (sch.GetCntColumns() != data_.size()) {
+        DLOG(ERROR) << "schema cnt cols neq real cnt cols : "
+                    << sch.GetCntColumns() << ' ' << data_.size();
+        throw std::exception();
+    }
 }
 
-Batch::Batch(const Schema& sch, std::vector<Column>&& col) {
-    schema_ = sch;
-    data_ = std::move(col);
+Batch::Batch(const Schema& sch, std::vector<Column>&& col)
+    : schema_(sch), data_(std::move(col)) {
+    if (sch.GetCntColumns() != data_.size()) {
+        DLOG(ERROR) << "schema cnt cols neq real cnt cols : "
+                    << sch.GetCntColumns() << ' ' << data_.size();
+        throw std::exception();
+    }
 }
 
 void Batch::NewSchema(Schema schema) {
     if (schema.GetCntColumns() != schema_.GetCntColumns()) {
-        DLOG(ERROR) << "Cannot get new schema in butch, wrong cnt columns";
+        DLOG(ERROR) << "Cannot put new schema in batch, wrong cnt columns";
         throw std::exception();
     }
     if (schema.GetNames().size() != 0) {
@@ -57,13 +66,16 @@ Column& Batch::GetColumnIdx(size_t i) {
     return data_[i];
 }
 
-Column Batch::GetColumnByName(const std::string& s) const {
+const Column& Batch::GetColumnIdx(size_t i) const {
+    return data_[i];
+}
+
+const Column& Batch::GetColumnByName(const std::string& s) const {
     for (size_t i = 0; i < schema_.GetCntColumns(); ++i) {
         if (schema_.GetNames()[i] == s) {
             return data_[i];
         }
     }
-    DLOG(INFO) << "column with name " << s << " doesnt exists";
     throw std::exception();
 }
 
