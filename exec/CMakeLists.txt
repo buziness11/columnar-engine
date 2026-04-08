@@ -1,4 +1,4 @@
-set(EXECS exec_queries columnar_to_csv csv_to_columnar)
+set(EXECS exec_queries columnar_to_csv csv_to_columnar get_col_from_bzn)
 
 foreach(EXE ${EXECS})
     add_executable(${EXE} ${EXE}.cpp)
