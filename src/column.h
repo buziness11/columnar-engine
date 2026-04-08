@@ -82,7 +82,7 @@ public:
 
     ColumnType& GetData() &;
     ColumnType&& GetData() &&;
-    const ColumnType& GetData() const;
+    const ColumnType& GetData() const&;
     void TranslateTo(Types);
     size_t GetSize() const;
     Types GetType() const;

@@ -14,7 +14,7 @@ ColumnType&& Column::GetData() && {
     return std::move(data_);
 }
 
-const ColumnType& Column::GetData() const {
+const ColumnType& Column::GetData() const& {
     return data_;
 }
 
