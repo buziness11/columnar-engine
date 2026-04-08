@@ -21,11 +21,18 @@ std::string TypeToString(Types t) {
         case Types::kTimestamp: {
             return "TIMESTAMP";
         }
-        default: {
-            DLOG(ERROR) << "forgot type";
-            throw std::exception();
+        case Types::kDouble: {
+            return "double";
+        }
+        case Types::kLongDouble: {
+            return "long double";
+        }
+        case Types::kBool: {
+            return "bool";
         }
     }
+    DLOG(ERROR) << "forgot add type in type to string";
+    throw std::exception();
 }
 
 Types StringToType(const std::string& s) {
@@ -41,10 +48,15 @@ Types StringToType(const std::string& s) {
         return Types::kDate;
     } else if (s == "TIMESTAMP") {
         return Types::kTimestamp;
-    } else {
-        DLOG(ERROR) << "Cannot support this type: " << s;
-        throw std::exception();
+    } else if (s == "double") {
+        return Types::kDouble;
+    } else if (s == "long double") {
+        return Types::kLongDouble;
+    } else if (s == "bool") {
+        return Types::kBool;
     }
+    DLOG(ERROR) << "forgot add type: " << s;
+    throw std::exception();
 }
 
 Types StringToType(std::string&& s) {

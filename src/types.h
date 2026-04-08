@@ -11,7 +11,17 @@
 #include <glog/logging.h>
 #include "datatype.h"
 
-enum class Types { kInt16_t, kInt32_t, kInt64_t, kString, kDate, kTimestamp };
+enum class Types {
+    kInt16_t,
+    kInt32_t,
+    kInt64_t,
+    kString,
+    kDate,
+    kTimestamp,
+    kBool,
+    kDouble,
+    kLongDouble
+};
 
 std::string TypeToString(Types t);
 
@@ -23,8 +33,9 @@ Types StringToType(std::string&& s);
 ///////////////////////////////////////////////////////////////
 
 template <Types T>
-concept NumericType =
-    (T == Types::kInt16_t) || (T == Types::kInt32_t) || (T == Types::kInt64_t);
+concept NumericType = (T == Types::kInt16_t) || (T == Types::kInt32_t) ||
+                      (T == Types::kInt64_t) || (T == Types::kDouble) ||
+                      (T == Types::kLongDouble);
 
 template <Types T>
 concept StringType = (T == Types::kString);
@@ -60,7 +71,7 @@ std::string TranslateTtoU(int32_t days_from_1970_01_01) {
 }
 
 template <Types T, Types U>
-    requires(U == Types::kDate) && (T == Types::kString)
+    requires(T == Types::kString) && (U == Types::kDate)
 int32_t TranslateTtoU(const std::string& yyyy_mm_dd) {
     return DaysCount(yyyy_mm_dd);
 }
@@ -72,7 +83,7 @@ std::string TranslateTtoU(int64_t seconds_from_1970_01_01) {
 }
 
 template <Types T, Types U>
-    requires(U == Types::kTimestamp) && (T == Types::kString)
+    requires(T == Types::kString) && (U == Types::kTimestamp)
 int64_t TranslateTtoU(const std::string& yyyy_mm_dd_hh_mm_ss) {
     return SecondsCount(yyyy_mm_dd_hh_mm_ss);
 }
@@ -102,4 +113,16 @@ struct EnumToCpp<Types::kDate> {
 template <>
 struct EnumToCpp<Types::kTimestamp> {
     using Type = int64_t;
+};
+template <>
+struct EnumToCpp<Types::kDouble> {
+    using Type = double;
+};
+template <>
+struct EnumToCpp<Types::kLongDouble> {
+    using Type = long double;
+};
+template <>
+struct EnumToCpp<Types::kBool> {
+    using Type = bool;
 };

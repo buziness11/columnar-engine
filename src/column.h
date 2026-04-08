@@ -14,7 +14,9 @@ template <class... Ts>
 Overloaded(Ts...) -> Overloaded<Ts...>;
 
 using ColumnType = std::variant<std::vector<int16_t>, std::vector<int32_t>,
-                                std::vector<int64_t>, std::vector<std::string>>;
+                                std::vector<int64_t>, std::vector<std::string>,
+                                std::vector<double>, std::vector<long double>,
+                                std::vector<bool>>;
 
 template <typename F>
 void DispatchColumnHelper(Types from, F&& f) {
@@ -39,6 +41,18 @@ void DispatchColumnHelper(Types from, F&& f) {
             f.template operator()<Types::kDate>();
             break;
 
+        case Types::kBool:
+            f.template operator()<Types::kBool>();
+            break;
+
+        case Types::kDouble:
+            f.template operator()<Types::kDouble>();
+            break;
+
+        case Types::kLongDouble:
+            f.template operator()<Types::kLongDouble>();
+            break;
+
         case Types::kTimestamp:
             f.template operator()<Types::kTimestamp>();
             break;
@@ -49,9 +63,9 @@ class Column {
 public:
     Column() = default;
     Column(const Column&) = default;
-    Column(Column&&);
+    Column(Column&&) = default;
     Column& operator=(const Column&) = default;
-    Column& operator=(Column&&);
+    Column& operator=(Column&&) = default;
     ~Column() = default;
 
     template <typename T>
@@ -68,9 +82,10 @@ public:
 
     ColumnType& GetData() &;
     ColumnType&& GetData() &&;
+    const ColumnType& GetData() const&;
     void TranslateTo(Types);
-    size_t GetSize();
-    Types GetType();
+    size_t GetSize() const;
+    Types GetType() const;
 
     void PrintCol();
 
