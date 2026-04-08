@@ -14,7 +14,9 @@ template <class... Ts>
 Overloaded(Ts...) -> Overloaded<Ts...>;
 
 using ColumnType = std::variant<std::vector<int16_t>, std::vector<int32_t>,
-                                std::vector<int64_t>, std::vector<std::string>>;
+                                std::vector<int64_t>, std::vector<std::string>,
+                                std::vector<double>, std::vector<long double>,
+                                std::vector<bool>>;
 
 template <typename F>
 void DispatchColumnHelper(Types from, F&& f) {
@@ -37,6 +39,18 @@ void DispatchColumnHelper(Types from, F&& f) {
 
         case Types::kDate:
             f.template operator()<Types::kDate>();
+            break;
+
+        case Types::kBool:
+            f.template operator()<Types::kBool>();
+            break;
+
+        case Types::kDouble:
+            f.template operator()<Types::kDouble>();
+            break;
+
+        case Types::kLongDouble:
+            f.template operator()<Types::kLongDouble>();
             break;
 
         case Types::kTimestamp:

@@ -76,6 +76,7 @@ const Column& Batch::GetColumnByName(const std::string& s) const {
             return data_[i];
         }
     }
+    DLOG(ERROR) << "Column named : " << s << " doesnt exists";
     throw std::exception();
 }
 
