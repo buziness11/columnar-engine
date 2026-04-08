@@ -31,6 +31,8 @@ std::string TypeToString(Types t) {
             return "bool";
         }
     }
+    DLOG(ERROR) << "forgot add type in type to string";
+    throw std::exception();
 }
 
 Types StringToType(const std::string& s) {
