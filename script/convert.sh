@@ -1,1 +1,1 @@
-./exec/csv_to_columnar ${INPUT_CSV} ${INPUT_SCHEMA} ${COLUMNAR}
+./build/exec/csv_to_columnar ${INPUT_CSV} ${INPUT_SCHEMA} ${COLUMNAR}
