@@ -1,1 +1,1 @@
-./exec/exec_query.sh ${QUERY_NUM} ${COLUMNAR} ${OUTPUT} ${LOGS}
+./build/exec/exec_queries ${QUERY_NUM} ${COLUMNAR} ${OUTPUT} ${LOGS}

@@ -9,3 +9,4 @@ build-release/
 build-perf/
 build_perf/
 tests/data/hits_sample.csv
+glog/
