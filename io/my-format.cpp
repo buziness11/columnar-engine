@@ -1,4 +1,4 @@
-#include "my-format.h"
+#include "io/my-format.h"
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
@@ -9,11 +9,11 @@
 #include <iostream>
 #include <variant>
 #include <vector>
-#include "batch.h"
-#include "column.h"
-#include "schema.h"
-#include "rwconsts.h"
-#include "types.h"
+#include "core/batch.h"
+#include "core/column.h"
+#include "core/schema.h"
+#include "core/rwconsts.h"
+#include "core/types.h"
 #include <glog/logging.h>
 
 BZNReader::BZNReader(std::fstream* file) : ma_format_(file) {
@@ -40,10 +40,10 @@ BZNReader::BZNReader(std::fstream* file) : ma_format_(file) {
 
 void BZNReader::BuildSchema() {
     std::vector<std::string> names = GetMetaString();
-    std::vector<std::string> typess = GetMetaString();
+    std::vector<std::string> types_string = GetMetaString();
     std::vector<Types> types;
-    types.reserve(types.size());
-    for (auto t : typess) {
+    types.reserve(types_string.size());
+    for (auto t : types_string) {
         types.emplace_back(StringToType(t));
     }
     schema_ = Schema(names, types);

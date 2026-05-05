@@ -2,12 +2,12 @@
 #include <functional>
 #include <optional>
 #include <string>
-#include "batch.h"
-#include "csv-rw.h"
-#include "my-format.h"
-#include "operators.h"
-#include "expressions.h"
-#include "types.h"
+#include "core/batch.h"
+#include "io/csv-rw.h"
+#include "io/my-format.h"
+#include "query/operators.h"
+#include "query/expressions.h"
+#include "core/types.h"
 #if defined(__APPLE__)
 #define BOOST_STACKTRACE_GNU_SOURCE_NOT_REQUIRED  // macos only
 #endif
@@ -45,7 +45,7 @@ void Execute0() {
     exe::OperPtr scan = GetScanner({"UserID"});
     DLOG(INFO) << "scan getted";
     std::optional<Batch> nw = scan->Next();
-    CSVWriter csv_w(&res_file);
+    CsvWriter csv_w(&res_file);
     while (nw) {
         DLOG(INFO) << "write";
         csv_w.WriteBatch(*nw);

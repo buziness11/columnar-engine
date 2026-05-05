@@ -1,9 +1,9 @@
 #pragma once
 
-#include "batch.h"
-#include "column.h"
-#include "expressions.h"
-#include "my-format.h"
+#include "core/batch.h"
+#include "core/column.h"
+#include "query/expressions.h"
+#include "io/my-format.h"
 #include <memory>
 #include <optional>
 #include <string>
@@ -51,3 +51,30 @@ private:
     std::vector<AggregateType> aggregations_;
     std::vector<std::shared_ptr<IExpression>> expressions_;
 };
+
+class GroupByOperator : public IOperator {
+public:
+    GroupByOperator(std::shared_ptr<IOperator> child,
+                    std::vector<AggregateType> aggregations,
+                    std::vector<std::shared_ptr<IExpression>> expressions,
+                    std::vector<std::shared_ptr<IExpression>> keys);
+    std::optional<Batch> Next() override;
+
+private:
+    std::shared_ptr<IOperator> child_;
+    std::vector<AggregateType> aggregations_;
+    std::vector<std::shared_ptr<IExpression>> expressions_;
+    std::vector<std::shared_ptr<IExpression>> keys_;
+};
+
+// class OrderByLimitOperator : public IOperator {
+// public:
+//     OrderByLimitOperator(std::shared_ptr<IOperator> child,
+//                          std::shared_ptr<IExpression> keys, size_t limit);
+//     std::optional<Batch> Next() override;
+
+// private:
+//     std::shared_ptr<IOperator> child_;
+//     std::shared_ptr<IExpression> keys_;
+//     size_t limit_;
+// };

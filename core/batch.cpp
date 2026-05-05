@@ -1,12 +1,12 @@
-#include "batch.h"
+#include "core/batch.h"
 #include <cstddef>
 #include <cstdint>
 #include <exception>
 #include <variant>
 #include <vector>
-#include "column.h"
-#include "schema.h"
-#include "types.h"
+#include "core/column.h"
+#include "core/schema.h"
+#include "core/types.h"
 
 Batch::Batch(Schema&& sch, std::vector<Column>&& col)
     : schema_(std::move(sch)), data_(std::move(col)) {
@@ -78,6 +78,24 @@ const Column& Batch::GetColumnByName(const std::string& s) const {
     }
     DLOG(ERROR) << "Column named : " << s << " doesnt exists";
     throw std::exception();
+}
+
+Batch Batch::GetRow(size_t i) {
+    std::vector<Column> res;
+    for (size_t j = 0; j < data_.size(); ++j) {
+        res.emplace_back(data_[j].GetElementByIndexAsColumn(i));
+    }
+    return Batch(schema_, std::move(res));
+}
+
+void Batch::MergeWithOtherBatch(Batch&& other) {
+    if (other.GetCntColumns() != GetCntColumns()) {
+        DLOG(ERROR) << "Cannot merge batches with different cnt columns";
+        throw std::exception();
+    }
+    for (size_t i = 0; i < GetCntColumns(); ++i) {
+        data_[i].MergeWithOtherColumn(std::move(other.GetColumnIdx(i)));
+    }
 }
 
 const std::vector<Column>& Batch::GetBatchData() const {

@@ -5,13 +5,13 @@
 #include <istream>
 #include <ostream>
 #include <vector>
-#include "batch.h"
-#include "rwconsts.h"
+#include "core/batch.h"
+#include "core/rwconsts.h"
 
 // follow RFC 4180 standart if crlf
-class CSVReader {
+class CsvReader {
 public:
-    CSVReader(std::fstream *input, size_t cnt_columns, char delim = ',',
+    CsvReader(std::fstream *input, size_t cnt_columns, char delim = ',',
               bool lf = true, bool have_header = false);
     std::vector<std::string> GetRow();
     Batch GetBatch(size_t batch_row_size = kBatchRowSize);
@@ -24,9 +24,9 @@ private:
     bool lf_;
 };
 
-class CSVWriter {
+class CsvWriter {
 public:
-    CSVWriter(std::fstream *output, bool lf = true);
+    CsvWriter(std::fstream *output, bool lf = true);
     void WriteBatch(Batch, char delim = ',');
 
 private:

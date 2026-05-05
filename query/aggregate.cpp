@@ -1,6 +1,6 @@
-#include "aggregate.h"
-#include "column.h"
-#include "types.h"
+#include "query/aggregate.h"
+#include "core/column.h"
+#include "core/types.h"
 #include <cstdint>
 #include <exception>
 #include <memory>
@@ -225,7 +225,8 @@ std::shared_ptr<IAggregateState> MinFunc::CreateState() {
             throw std::exception();
         } else {
             using cpptype = EnumToCpp<Dst>::Type;
-            res = std::make_shared<MinState<cpptype>>(std::numeric_limits<cpptype>::max());
+            res = std::make_shared<MinState<cpptype>>(
+                std::numeric_limits<cpptype>::max());
         }
     });
     return res;
@@ -266,7 +267,6 @@ Column MinFunc::Finalize(std::shared_ptr<IAggregateState> state, Types) {
 ///////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////
 
-
 MaxFunc::MaxFunc(Types type) : type_(type) {
 }
 
@@ -278,7 +278,11 @@ std::shared_ptr<IAggregateState> MaxFunc::CreateState() {
             throw std::exception();
         } else {
             using cpptype = EnumToCpp<Dst>::Type;
-            res = std::make_shared<MaxState<cpptype>>(std::numeric_limits<cpptype>::min());
+            // Для floating-point numeric_limits::min() — это наименьшее
+            // положительное нормализованное значение, поэтому отрицательные
+            // числа в данных не будут учтены. Используем lowest().
+            res = std::make_shared<MaxState<cpptype>>(
+                std::numeric_limits<cpptype>::lowest());
         }
     });
     return res;

@@ -5,11 +5,12 @@
 #include <exception>
 #include <fstream>
 #include <string>
+#include <variant>
 #include <vector>
 #include <chrono>
 #include <sstream>
 #include <glog/logging.h>
-#include "datatype.h"
+#include "core/datatype.h"
 
 enum class Types {
     kInt16_t,
@@ -22,6 +23,14 @@ enum class Types {
     kDouble,
     kLongDouble
 };
+
+using ColumnType = std::variant<std::vector<int16_t>, std::vector<int32_t>,
+                                std::vector<int64_t>, std::vector<std::string>,
+                                std::vector<double>, std::vector<long double>,
+                                std::vector<bool>>;
+
+using ValueType = std::variant<int16_t, int32_t, int64_t, std::string, double,
+                               long double, bool>;
 
 std::string TypeToString(Types t);
 
