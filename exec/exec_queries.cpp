@@ -1,12 +1,12 @@
 #include <cstddef>
 #include <functional>
 #include <string>
-#include "batch.h"
-#include "csv-rw.h"
-#include "my-format.h"
-#include "operators.h"
-#include "expressions.h"
-#include "types.h"
+#include "core/batch.h"
+#include "io/csv-rw.h"
+#include "io/my-format.h"
+#include "query/operators.h"
+#include "query/expressions.h"
+#include "core/types.h"
 #if defined(__APPLE__)
 #define BOOST_STACKTRACE_GNU_SOURCE_NOT_REQUIRED  // macos only
 #endif
@@ -41,7 +41,7 @@ void Execute0() {
     std::optional<Batch> res =
         AggregateOperator(scan, {AggregateType::Count}, {AdvEngineRef}).Next();
 
-    CSVWriter csv_w(&res_file);
+    CsvWriter csv_w(&res_file);
     csv_w.WriteBatch(*res);
 }
 
@@ -58,7 +58,7 @@ void Execute1() {
     std::optional<Batch> res =
         AggregateOperator(filter, {AggregateType::Count}, {AdvEngineID}).Next();
 
-    CSVWriter csv_w(&res_file);
+    CsvWriter csv_w(&res_file);
     csv_w.WriteBatch(*res);
 }
 void Execute2() {
@@ -75,7 +75,7 @@ void Execute2() {
     exe::OperPtr agg_op =
         std::make_shared<AggregateOperator>(scan, aggs, exprs);
 
-    CSVWriter csv_w(&res_file);
+    CsvWriter csv_w(&res_file);
     csv_w.WriteBatch(*(agg_op->Next()));
 }
 
@@ -86,7 +86,7 @@ void Execute3() {
     std::optional<Batch> res =
         AggregateOperator(scan, {AggregateType::Avg}, {UserID}).Next();
 
-    CSVWriter csv_w(&res_file);
+    CsvWriter csv_w(&res_file);
     csv_w.WriteBatch(*res);
 }
 void Execute4() {
@@ -97,7 +97,7 @@ void Execute4() {
         AggregateOperator(scan, {AggregateType::CountDistinct}, {UserID})
             .Next();
 
-    CSVWriter csv_w(&res_file);
+    CsvWriter csv_w(&res_file);
     csv_w.WriteBatch(*res);
 }
 void Execute5() {
@@ -109,7 +109,7 @@ void Execute5() {
         AggregateOperator(scan, {AggregateType::CountDistinct}, {UserID})
             .Next();
 
-    CSVWriter csv_w(&res_file);
+    CsvWriter csv_w(&res_file);
     csv_w.WriteBatch(*res);
 }
 void Execute6() {
@@ -118,10 +118,11 @@ void Execute6() {
     exe::ExprPtr EventDate =
         std::make_shared<ColumnRef>(ColumnRef("EventDate"));
     std::optional<Batch> res =
-        AggregateOperator(scan, {AggregateType::Min, AggregateType::Max}, {EventDate, EventDate})
+        AggregateOperator(scan, {AggregateType::Min, AggregateType::Max},
+                          {EventDate, EventDate})
             .Next();
 
-    CSVWriter csv_w(&res_file);
+    CsvWriter csv_w(&res_file);
     csv_w.WriteBatch(*res);
 }
 void Execute7() {

@@ -1,11 +1,40 @@
-#include "column.h"
+#include "core/column.h"
 #include <cstddef>
 #include <cstdint>
 #include <exception>
 #include <string>
 #include <type_traits>
-#include "rwconsts.h"
-#include "types.h"
+#include <variant>
+#include "core/rwconsts.h"
+#include "core/types.h"
+
+void Column::MergeWithOtherColumn(Column&& ot) {
+    if (ot.type_ != type_) {
+        DLOG(INFO) << "cannot merge columns of different types";
+        throw std::exception();
+    }
+    std::visit(
+        Overloaded([&ot](auto&& x) {
+            std::visit(
+                Overloaded{[&x](auto&& y) {
+                    if constexpr (std::is_same_v<decltype(x), decltype(y)>) {
+                        x.insert(x.end(), y.begin(), y.end());
+                    }
+                }},
+                ot.GetData());
+        }),
+        data_);
+}
+
+Column Column::GetElementByIndexAsColumn(size_t idx) {
+    Column res;
+    std::visit(Overloaded([this, &res, idx](auto&& x) {
+                   res = Column(std::move(std::decay_t<decltype(x)>(1, x[idx])),
+                                type_);
+               }),
+               data_);
+    return res;
+}
 
 ColumnType& Column::GetData() & {
     return data_;

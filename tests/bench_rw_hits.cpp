@@ -1,12 +1,12 @@
-#include "csv-rw.h"
-#include "my-format.h"
+#include "io/csv-rw.h"
+#include "io/my-format.h"
 #include <gtest/gtest.h>
 #include <cstddef>
 #include <cstdint>
 #include <optional>
-#include "batch.h"
-#include "schema.h"
-#include "types.h"
+#include "core/batch.h"
+#include "core/schema.h"
+#include "core/types.h"
 
 std::string hits_sample_csv_way =
     TEST_DATA_DIR + std::string("hits_sample.csv");
@@ -21,7 +21,7 @@ TEST(Hits, HitsSample) {
 
     DLOG(INFO) << "Make reader";
     std::fstream table(hits_sample_csv_way, std::ios::in | std::ios::binary);
-    CSVReader csv_r(&table, schema.GetCntColumns());
+    CsvReader csv_r(&table, schema.GetCntColumns());
 
     DLOG(INFO) << "Make my format";
     std::fstream maformat_file("hits_sample.bzn", std::ios::out | std::ios::in |
@@ -42,7 +42,7 @@ TEST(Hits, HitsSample) {
                                             std::ios::trunc | std::ios::binary);
 
     // DLOG(INFO) << "My format to csv";
-    CSVWriter csv_w(&res_file);
+    CsvWriter csv_w(&res_file);
     while (!bzn_r.IsReaded()) {
         csv_w.WriteBatch(bzn_r.Read());
     }

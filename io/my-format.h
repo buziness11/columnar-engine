@@ -1,8 +1,8 @@
 #pragma once
 
-#include "batch.h"
-#include "column.h"
-#include "schema.h"
+#include "core/batch.h"
+#include "core/column.h"
+#include "core/schema.h"
 #include <vector>
 #include <cstdint>
 #include <cstddef>

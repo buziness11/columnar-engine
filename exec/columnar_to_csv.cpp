@@ -1,5 +1,5 @@
-#include "src/csv-rw.h"
-#include "src/my-format.h"
+#include "io/csv-rw.h"
+#include "io/my-format.h"
 
 std::string hits_small_csv_way_lf =
     TEST_DATA_DIR + std::string("hits_small_sample.csv");
@@ -15,7 +15,7 @@ int main() {
     std::fstream res_file("output.csv", std::ios::out | std::ios::in |
                                             std::ios::trunc | std::ios::binary);
 
-    CSVWriter csv_w(&res_file);
+    CsvWriter csv_w(&res_file);
     while (!bzn_r.IsReaded()) {
         csv_w.WriteBatch(bzn_r.Read());
     }

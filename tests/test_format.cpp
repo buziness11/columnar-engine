@@ -1,13 +1,13 @@
-#include "csv-rw.h"
-#include "my-format.h"
+#include "io/csv-rw.h"
+#include "io/my-format.h"
 #include <gtest/gtest.h>
 #include <cstddef>
 #include <cstdint>
 #include <optional>
 #include <string>
-#include "batch.h"
-#include "schema.h"
-#include "types.h"
+#include "core/batch.h"
+#include "core/schema.h"
+#include "core/types.h"
 
 std::string basic_test_csv_way_crlf =
     TEST_DATA_DIR + std::string("basic_test_crlf.csv");
@@ -30,7 +30,7 @@ TEST(BatchWorks, BasicWorkCRLF) {
         DLOG(INFO) << "Make reader";
         std::fstream table(basic_test_csv_way_crlf,
                            std::ios::in | std::ios::binary);
-        CSVReader csv_r(&table, 4, ',', false);  // basic_table crlf
+        CsvReader csv_r(&table, 4, ',', false);  // basic_table crlf
 
         DLOG(INFO) << "Make my format";
         std::fstream maformat_file("data.bzn", std::ios::out | std::ios::in |
@@ -56,13 +56,13 @@ TEST(BatchWorks, BasicWorkCRLF) {
                                                 std::ios::binary);
 
         DLOG(INFO) << "My format to csv";
-        CSVWriter csv_w(&res_file, false);
+        CsvWriter csv_w(&res_file, false);
         while (!bzn_r.IsReaded()) {
             csv_w.WriteBatch(bzn_r.Read());
         }
 
         std::fstream outfile("output.csv", std::ios::in | std::ios::binary);
-        CSVReader out_r(&outfile, 4, ',', false);
+        CsvReader out_r(&outfile, 4, ',', false);
         for (size_t i = 0; i < 3; ++i) {
             ASSERT_EQ(out_r.GetRow(), expected[i]);
         }
@@ -91,7 +91,7 @@ TEST(BatchWorks, BasicWorkLF) {
         // DLOG(INFO) << "Make reader";
         std::fstream table(basic_test_csv_way_lf,
                            std::ios::in | std::ios::binary);
-        CSVReader csv_r(&table, 4);
+        CsvReader csv_r(&table, 4);
 
         // DLOG(INFO) << "Make my format";
         std::fstream maformat_file("data.bzn", std::ios::out | std::ios::in |
@@ -117,13 +117,13 @@ TEST(BatchWorks, BasicWorkLF) {
                                                 std::ios::binary);
 
         // DLOG(INFO) << "My format to csv";
-        CSVWriter csv_w(&res_file);
+        CsvWriter csv_w(&res_file);
         while (!bzn_r.IsReaded()) {
             csv_w.WriteBatch(bzn_r.Read());
         }
 
         std::fstream outfile("output.csv", std::ios::in | std::ios::binary);
-        CSVReader out_r(&outfile, 4);
+        CsvReader out_r(&outfile, 4);
         for (size_t i = 0; i < 3; ++i) {
             ASSERT_EQ(out_r.GetRow(), expected[i]);
         }
@@ -149,7 +149,7 @@ TEST(BZNReader, CheckReadByNames) {
                                             std::ios::trunc | std::ios::binary);
 
     DLOG(INFO) << "My format to csv";
-    CSVWriter csv_w(&res_file);
+    CsvWriter csv_w(&res_file);
     while (!bzn_r.IsReaded()) {
         DLOG(INFO) << "write";
         csv_w.WriteBatch(bzn_r.Read({"name123", "a"}));
@@ -159,7 +159,7 @@ TEST(BZNReader, CheckReadByNames) {
         {"1", "first"}, {"5", "second"}, {"8", "third"}};
 
     std::fstream outfile("output.csv", std::ios::in | std::ios::binary);
-    CSVReader out_r(&outfile, 2);
+    CsvReader out_r(&outfile, 2);
     for (size_t i = 0; i < 3; ++i) {
         ASSERT_EQ(out_r.GetRow(), expected[i]);
     }
@@ -189,7 +189,7 @@ TEST(Hits, HitsSmallGood) {
 
     // DLOG(INFO) << "Make reader";
     std::fstream table(hits_small_csv_way_lf, std::ios::in | std::ios::binary);
-    CSVReader csv_r(&table, schema.GetCntColumns());
+    CsvReader csv_r(&table, schema.GetCntColumns());
 
     // DLOG(INFO) << "Make my format";
     std::fstream maformat_file("data.bzn", std::ios::out | std::ios::in |
@@ -210,17 +210,17 @@ TEST(Hits, HitsSmallGood) {
                                             std::ios::trunc | std::ios::binary);
 
     // DLOG(INFO) << "My format to csv";
-    CSVWriter csv_w(&res_file);
+    CsvWriter csv_w(&res_file);
     while (!bzn_r.IsReaded()) {
         csv_w.WriteBatch(bzn_r.Read());
     }
 
     std::fstream outfile("output.csv", std::ios::in | std::ios::binary);
-    CSVReader out_r(&outfile, schema.GetCntColumns());
+    CsvReader out_r(&outfile, schema.GetCntColumns());
 
     std::fstream expected(hits_small_csv_way_lf,
                           std::ios::in | std::ios::binary);
-    CSVReader out_expected(&expected, schema.GetCntColumns());
+    CsvReader out_expected(&expected, schema.GetCntColumns());
 
     while (!out_expected.IsReaded()) {
         std::vector<std::string> expected_strs = out_expected.GetRow();

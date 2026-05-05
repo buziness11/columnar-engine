@@ -1,15 +1,15 @@
-#include "schema.h"
+#include "core/schema.h"
 #include <cstddef>
 #include <exception>
-#include "csv-rw.h"
-#include "types.h"
+#include "io/csv-rw.h"
+#include "core/types.h"
 
 Schema::Schema() : cnt_columns_{0}, column_names_{}, column_types_{} {
 }
 
 Schema::Schema(std::fstream* schema, char schema_delim, bool lf)
     : cnt_columns_(0) {
-    CSVReader cr(schema, 2, schema_delim, lf);
+    CsvReader cr(schema, 2, schema_delim, lf);
     while (!cr.IsReaded()) {
         std::vector<std::string> row = cr.GetRow();
         column_names_.emplace_back(std::move(row[0]));

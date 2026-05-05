@@ -1,6 +1,6 @@
 #include <exception>
-#include "src/csv-rw.h"
-#include "src/my-format.h"
+#include "io/csv-rw.h"
+#include "io/my-format.h"
 
 #if defined(__APPLE__)
 #define BOOST_STACKTRACE_GNU_SOURCE_NOT_REQUIRED  // macos only
@@ -52,7 +52,7 @@ int main(int argc, char** argv) {
     }
 
     Schema schema(&schema_file);
-    CSVReader csv_r(&table, schema.GetCntColumns());
+    CsvReader csv_r(&table, schema.GetCntColumns());
     BZNWriter bzn_w(schema, &maformat_file);
     while (!csv_r.IsReaded()) {
         bzn_w.Write(csv_r.GetBatch());

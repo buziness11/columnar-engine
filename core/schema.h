@@ -2,7 +2,7 @@
 
 #include <cstddef>
 #include <vector>
-#include "types.h"
+#include "core/types.h"
 
 class Schema {
 public:

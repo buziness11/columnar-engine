@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <exception>
 #include <variant>
-#include "types.h"
+#include "core/types.h"
 
 template <class... Ts>
 struct Overloaded : Ts... {
@@ -12,11 +12,6 @@ struct Overloaded : Ts... {
 };
 template <class... Ts>
 Overloaded(Ts...) -> Overloaded<Ts...>;
-
-using ColumnType = std::variant<std::vector<int16_t>, std::vector<int32_t>,
-                                std::vector<int64_t>, std::vector<std::string>,
-                                std::vector<double>, std::vector<long double>,
-                                std::vector<bool>>;
 
 template <typename F>
 void DispatchColumnHelper(Types from, F&& f) {
@@ -79,6 +74,9 @@ public:
     T GetElementByIndex(size_t idx) {
         return std::get<std::vector<T>>(data_)[idx];
     }
+
+    Column GetElementByIndexAsColumn(size_t idx);
+    void MergeWithOtherColumn(Column&& ot);
 
     ColumnType& GetData() &;
     ColumnType&& GetData() &&;

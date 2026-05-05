@@ -1,8 +1,8 @@
 #pragma once
 
 #include <cstddef>
-#include "column.h"
-#include "schema.h"
+#include "core/column.h"
+#include "core/schema.h"
 
 class Batch {
 public:
@@ -15,6 +15,8 @@ public:
     size_t GetCntColumns() const;
     size_t GetColumnSize() const;
     Column& GetColumnIdx(size_t i);
+    Batch GetRow(size_t i);
+    void MergeWithOtherBatch(Batch&& other);
     const Column& GetColumnIdx(size_t i) const;
     const Column& GetColumnByName(const std::string&) const;
     const std::vector<Column>& GetBatchData() const;

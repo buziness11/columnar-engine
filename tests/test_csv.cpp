@@ -1,6 +1,6 @@
-#include "batch.h"
-#include "csv-rw.h"
-#include "schema.h"
+#include "core/batch.h"
+#include "io/csv-rw.h"
+#include "core/schema.h"
 #include <gtest/gtest.h>
 #include <cstddef>
 #include <cstdint>
@@ -41,7 +41,7 @@ protected:
 };
 
 TEST_F(CsvReaderTest, BasicWork) {
-    CSVReader cr(CreateTestStream("0,german,20\r\n1,igor,19"), 3, ',', false);
+    CsvReader cr(CreateTestStream("0,german,20\r\n1,igor,19"), 3, ',', false);
     std::vector<std::string> expected{"0", "german", "20"};
     std::vector<std::string> actual = cr.GetRow();
     ASSERT_TRUE(expected == actual);
@@ -57,7 +57,7 @@ TEST_F(CsvReaderTest, CRLF) {
         {"0,german,20\r\n1,igor,19", false},
         {"0,german,20\r\n1,igor,19\r\n", false}};
     for (auto [table, lf] : tables_crlf_lf) {
-        CSVReader cr(CreateTestStream(table), 3, ',', lf);
+        CsvReader cr(CreateTestStream(table), 3, ',', lf);
         std::vector<std::string> expected{"0", "german", "20"};
         std::vector<std::string> actual = cr.GetRow();
         ASSERT_TRUE(expected == actual);
@@ -73,7 +73,7 @@ TEST_F(CsvReaderTest, LF) {
     std::vector<std::pair<std::string, bool>> tables_crlf_lf = {
         {"0,german,20\n1,igor,19", true}, {"0,german,20\n1,igor,19\n", true}};
     for (auto [table, lf] : tables_crlf_lf) {
-        CSVReader cr(CreateTestStream(table), 3, ',', lf);
+        CsvReader cr(CreateTestStream(table), 3, ',', lf);
         std::vector<std::string> expected{"0", "german", "20"};
         std::vector<std::string> actual = cr.GetRow();
         ASSERT_TRUE(expected == actual);
@@ -88,7 +88,7 @@ TEST_F(CsvReaderTest, LF) {
 TEST_F(CsvReaderTest, EmptyFields) {
     std::vector<std::string> emptys = {",,", ",,\n"};
     for (auto s : emptys) {
-        CSVReader cr(CreateTestStream(",,\n"), 3);
+        CsvReader cr(CreateTestStream(",,\n"), 3);
         auto row = cr.GetRow();
 
         for (auto i : row) {
@@ -101,13 +101,13 @@ TEST_F(CsvReaderTest, EmptyFields) {
 }
 
 TEST_F(CsvReaderTest, NeqCntInColumns) {
-    CSVReader cr(CreateTestStream(",\r\n,,"), 2);
+    CsvReader cr(CreateTestStream(",\r\n,,"), 2);
     cr.GetRow();
     EXPECT_ANY_THROW(cr.GetRow());
 }
 
 TEST_F(CsvReaderTest, ZeroColumns) {
-    CSVReader cr(CreateTestStream(",,,"), 0);
+    CsvReader cr(CreateTestStream(",,,"), 0);
     EXPECT_ANY_THROW(cr.GetRow());
 }
 
@@ -119,7 +119,7 @@ TEST_F(CsvReaderTest, QuotesNorm) {
     };
     for (auto [s, c] : couldnotbebroken) {
         std::cerr << s << '\n';
-        CSVReader cr(CreateTestStream(s), c);
+        CsvReader cr(CreateTestStream(s), c);
         while (!cr.IsReaded()) {
             cr.GetRow();
         }
@@ -133,7 +133,7 @@ TEST_F(CsvReaderTest, QuotesBroken) {
         {"\",1,2,3,", 1}};
 
     for (auto [s, c] : couldbebroken) {
-        CSVReader cr(CreateTestStream(s), c);
+        CsvReader cr(CreateTestStream(s), c);
         EXPECT_ANY_THROW(cr.GetRow());
     }
 }
@@ -145,7 +145,7 @@ TEST_F(CsvReaderTest, NormalFileCRLF) {
     std::vector<std::vector<std::string>> expected{{"1", "2", "first", "4"},
                                                    {"5", "1", "second", "2"},
                                                    {"8", "17", "third", "2"}};
-    CSVReader cr(&file, 4, ',', false);
+    CsvReader cr(&file, 4, ',', false);
     for (size_t i = 0; i < 3; ++i) {
         ASSERT_TRUE(cr.GetRow() == expected[i]);
     }
@@ -162,7 +162,7 @@ TEST_F(CsvReaderTest, Batch) {
     };
     std::fstream file(way, std::ios::in | std::ios::out | std::ios::binary);
     ASSERT_TRUE(file.is_open()) << "cant open file";
-    CSVReader cr(&file, 4);
+    CsvReader cr(&file, 4);
     Batch b = cr.GetBatch();
     for (size_t i = 0; i < 4; ++i) {
         std::visit(Overloaded{[&](std::vector<std::string> v) {

@@ -1,4 +1,4 @@
-#include "csv-rw.h"
+#include "io/csv-rw.h"
 #include <functional>
 #include <iostream>
 #include <cstddef>
@@ -7,13 +7,13 @@
 #include <glog/logging.h>
 #include <istream>
 #include <variant>
-#include "batch.h"
-#include "column.h"
-#include "schema.h"
-#include "types.h"
-#include "rwconsts.h"
+#include "core/batch.h"
+#include "core/column.h"
+#include "core/schema.h"
+#include "core/types.h"
+#include "core/rwconsts.h"
 
-CSVReader::CSVReader(std::fstream* input, size_t cnt_columns, char delim,
+CsvReader::CsvReader(std::fstream* input, size_t cnt_columns, char delim,
                      bool lf, bool have_header)
     : input_(input), cnt_columns_(cnt_columns), delim_(delim), lf_(lf) {
     if (have_header) {
@@ -29,7 +29,7 @@ inline bool PredicateLF(int sym, int, bool is_quote) {
     return !(sym == EOF || (sym == '\n' && !is_quote));
 }
 
-std::vector<std::string> CSVReader::GetRow() {
+std::vector<std::string> CsvReader::GetRow() {
     if (IsReaded()) {
         DLOG(ERROR) << "CSV V S E";
         throw std::exception();
@@ -88,7 +88,7 @@ std::vector<std::string> CSVReader::GetRow() {
     return res;
 }
 
-Batch CSVReader::GetBatch(size_t batch_row_size) {
+Batch CsvReader::GetBatch(size_t batch_row_size) {
     if (IsReaded()) {
         DLOG(ERROR) << "CSV V S E";
         throw std::exception();
@@ -113,7 +113,7 @@ Batch CSVReader::GetBatch(size_t batch_row_size) {
                  std::move(columns));
 }
 
-bool CSVReader::IsReaded() {
+bool CsvReader::IsReaded() {
     return input_->eof();
 }
 
@@ -121,7 +121,7 @@ bool CSVReader::IsReaded() {
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-CSVWriter::CSVWriter(std::fstream* output, bool lf) : out_(output), lf_(lf) {
+CsvWriter::CsvWriter(std::fstream* output, bool lf) : out_(output), lf_(lf) {
 }
 
 std::string ScreenString(std::string&& s) {
@@ -131,7 +131,7 @@ std::string ScreenString(std::string&& s) {
     return res;
 }
 
-void CSVWriter::WriteBatch(Batch bat, char delim) {
+void CsvWriter::WriteBatch(Batch bat, char delim) {
     bat.NewTypes(std::vector<Types>(bat.GetCntColumns(), Types::kString));
     std::vector<std::vector<std::string>> batch_data(bat.GetCntColumns());
 
