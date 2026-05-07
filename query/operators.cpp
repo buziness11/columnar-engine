@@ -82,6 +82,8 @@ std::string AggregateTypeToString(AggregateType type) {
             return "max";
         }
     }
+    DLOG(ERROR) << "Wrong aggregate type";
+    throw std::exception();
 }
 
 AggregateType StringToAggregateType(const std::string& str) {
