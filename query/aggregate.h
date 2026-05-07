@@ -15,7 +15,8 @@ public:
     virtual ~IAggregateFunc() = default;
     virtual std::shared_ptr<IAggregateState> CreateState() = 0;
     virtual void Update(std::shared_ptr<IAggregateState>, const Column&) = 0;
-    virtual Column Finalize(std::shared_ptr<IAggregateState>, Types) = 0;
+    virtual Column Finalize(std::shared_ptr<IAggregateState>) = 0;
+    virtual Types GetInType() const = 0;
 };
 
 ///////////////////////////////////////////////////////////////////////////////////
@@ -31,10 +32,15 @@ public:
 
 class CountFunc : public IAggregateFunc {
 public:
+    CountFunc(Types type);
     ~CountFunc() override = default;
     std::shared_ptr<IAggregateState> CreateState() override;
     void Update(std::shared_ptr<IAggregateState>, const Column&) override;
-    Column Finalize(std::shared_ptr<IAggregateState>, Types) override;
+    Column Finalize(std::shared_ptr<IAggregateState>) override;
+    Types GetInType() const override;
+
+private:
+    Types type_;
 };
 
 ///////////////////////////////////////////////////////////////////////////////////
@@ -55,7 +61,8 @@ public:
     ~SumFunc() override = default;
     std::shared_ptr<IAggregateState> CreateState() override;
     void Update(std::shared_ptr<IAggregateState>, const Column&) override;
-    Column Finalize(std::shared_ptr<IAggregateState>, Types) override;
+    Column Finalize(std::shared_ptr<IAggregateState>) override;
+    Types GetInType() const override;
 
 private:
     Types type_;
@@ -75,10 +82,15 @@ public:
 
 class AvgFunc : public IAggregateFunc {
 public:
+    AvgFunc(Types type);
     ~AvgFunc() override = default;
     std::shared_ptr<IAggregateState> CreateState() override;
     void Update(std::shared_ptr<IAggregateState>, const Column&) override;
-    Column Finalize(std::shared_ptr<IAggregateState>, Types) override;
+    Column Finalize(std::shared_ptr<IAggregateState>) override;
+    Types GetInType() const override;
+
+private:
+    Types type_;
 };
 
 ///////////////////////////////////////////////////////////////////////////////////
@@ -99,7 +111,8 @@ public:
     ~CountDistinctFunc() override = default;
     std::shared_ptr<IAggregateState> CreateState() override;
     void Update(std::shared_ptr<IAggregateState>, const Column&) override;
-    Column Finalize(std::shared_ptr<IAggregateState>, Types) override;
+    Column Finalize(std::shared_ptr<IAggregateState>) override;
+    Types GetInType() const override;
 
 private:
     Types type_;
@@ -124,7 +137,8 @@ public:
     ~MinFunc() override = default;
     std::shared_ptr<IAggregateState> CreateState() override;
     void Update(std::shared_ptr<IAggregateState>, const Column&) override;
-    Column Finalize(std::shared_ptr<IAggregateState>, Types) override;
+    Column Finalize(std::shared_ptr<IAggregateState>) override;
+    Types GetInType() const override;
 
 private:
     Types type_;
@@ -149,7 +163,8 @@ public:
     ~MaxFunc() override = default;
     std::shared_ptr<IAggregateState> CreateState() override;
     void Update(std::shared_ptr<IAggregateState>, const Column&) override;
-    Column Finalize(std::shared_ptr<IAggregateState>, Types) override;
+    Column Finalize(std::shared_ptr<IAggregateState>) override;
+    Types GetInType() const override;
 
 private:
     Types type_;

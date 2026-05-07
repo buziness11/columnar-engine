@@ -12,7 +12,9 @@
 #include <map>
 #include <memory>
 #include <optional>
+#include <utility>
 #include <variant>
+#include <vector>
 
 ScanOperator::ScanOperator(BZNReader&& bzn_reader,
                            std::vector<std::string>&& column_names)
@@ -59,6 +61,48 @@ std::optional<Batch> FilterOperator::Next() {
     return Batch(new_batch->GetSchema(), std::move(res));
 }
 
+std::string AggregateTypeToString(AggregateType type) {
+    switch (type) {
+        case AggregateType::Sum: {
+            return "sum";
+        }
+        case AggregateType::Count: {
+            return "count";
+        }
+        case AggregateType::Avg: {
+            return "avg";
+        }
+        case AggregateType::CountDistinct: {
+            return "count_distinct";
+        }
+        case AggregateType::Min: {
+            return "min";
+        }
+        case AggregateType::Max: {
+            return "max";
+        }
+    }
+}
+
+AggregateType StringToAggregateType(const std::string& str) {
+    if (str == "sum") {
+        return AggregateType::Sum;
+    } else if (str == "count") {
+        return AggregateType::Count;
+    } else if (str == "avg") {
+        return AggregateType::Avg;
+    } else if (str == "count_distinct") {
+        return AggregateType::CountDistinct;
+    } else if (str == "min") {
+        return AggregateType::Min;
+    } else if (str == "max") {
+        return AggregateType::Max;
+    } else {
+        DLOG(ERROR) << "Wrong aggregate type";
+        throw std::exception();
+    }
+}
+
 AggregateOperator::AggregateOperator(
     std::shared_ptr<IOperator> child, std::vector<AggregateType> aggregations,
     std::vector<std::shared_ptr<IExpression>> expressions)
@@ -70,25 +114,25 @@ AggregateOperator::AggregateOperator(
 }
 
 std::shared_ptr<IAggregateFunc> FuncByAggregateTypeHelper(AggregateType type_,
-                                                          Types out_type) {
+                                                          Types in_type) {
     switch (type_) {
         case AggregateType::Count: {
-            return std::make_shared<CountFunc>(CountFunc());
+            return std::make_shared<CountFunc>(in_type);
         }
         case AggregateType::Sum: {
-            return std::make_shared<SumFunc>(out_type);
+            return std::make_shared<SumFunc>(in_type);
         }
         case AggregateType::Avg: {
-            return std::make_shared<AvgFunc>();
+            return std::make_shared<AvgFunc>(in_type);
         }
         case AggregateType::CountDistinct: {
-            return std::make_shared<CountDistinctFunc>(out_type);
+            return std::make_shared<CountDistinctFunc>(in_type);
         }
         case AggregateType::Min: {
-            return std::make_shared<MinFunc>(out_type);
+            return std::make_shared<MinFunc>(in_type);
         }
         case AggregateType::Max: {
-            return std::make_shared<MaxFunc>(out_type);
+            return std::make_shared<MaxFunc>(in_type);
         }
         default: {
             DLOG(ERROR) << "dont support such aggregation";
@@ -102,12 +146,10 @@ std::optional<Batch> AggregateOperator::Next() {
     std::vector<std::shared_ptr<IAggregateState>> states;
 
     std::optional<Batch> nw = child_->Next();
-    std::vector<Types> out_types(aggregations_.size(), Types::kString);
     for (size_t i = 0; i < aggregations_.size(); ++i) {
         Column cl = expressions_[i]->Evaluate(*nw);
-        out_types[i] = cl.GetType();
         funcs.emplace_back(
-            FuncByAggregateTypeHelper(aggregations_[i], out_types[i]));
+            FuncByAggregateTypeHelper(aggregations_[i], cl.GetType()));
         states.emplace_back(funcs.back()->CreateState());
         funcs[i]->Update(states[i], cl);
     }
@@ -122,8 +164,10 @@ std::optional<Batch> AggregateOperator::Next() {
     }
 
     std::vector<Column> res;
+    std::vector<Types> out_types;
     for (size_t i = 0; i < aggregations_.size(); ++i) {
-        res.emplace_back(funcs[i]->Finalize(states[i], out_types[i]));
+        res.emplace_back(funcs[i]->Finalize(states[i]));
+        out_types.emplace_back(res.back().GetType());
     }
     return Batch(Schema(std::vector<std::string>(res.size(), "asd"), out_types),
                  std::move(res));
@@ -186,21 +230,35 @@ std::vector<Column> key_decoder(const std::vector<std::string>& key,
 }
 
 std::optional<Batch> GroupByOperator::Next() {
+    DLOG(INFO) << "Group By next start";
     std::vector<std::shared_ptr<IAggregateFunc>> funcs;
     std::vector<std::map<std::string, std::shared_ptr<IAggregateState>>> states(
         aggregations_.size());
-
+    DLOG(INFO) << "Get first batch";
     std::optional<Batch> nw = child_->Next();
     if (!nw) {
+        DLOG(INFO) << "Empty first batch";
         return std::nullopt;
     }
+
     std::vector<std::string> str_keys = key_encoder(*nw, keys_);
-    std::vector<Types> out_types(aggregations_.size(), Types::kString);
+    std::vector<std::string> out_names_keys;
+    for (auto& i : keys_) {
+        out_names_keys.emplace_back(i->GetName());
+    }
+    DLOG(INFO) << "key names";
+    for (auto& i : out_names_keys) {
+        DLOG(INFO) << i;
+    }
+    DLOG(INFO) << "key sample " << str_keys[0];
+
+    std::vector<std::string> out_names_agg(aggregations_.size());
     for (size_t i = 0; i < aggregations_.size(); ++i) {
         Column cl = expressions_[i]->Evaluate(*nw);
-        out_types[i] = cl.GetType();
+        out_names_agg[i] = AggregateTypeToString(aggregations_[i]) + "_" +
+                           expressions_[i]->GetName();
         funcs.emplace_back(
-            FuncByAggregateTypeHelper(aggregations_[i], out_types[i]));
+            FuncByAggregateTypeHelper(aggregations_[i], cl.GetType()));
         for (size_t j = 0; j < str_keys.size(); ++j) {
             if (states[i].find(str_keys[j]) == states[i].end()) {
                 states[i][str_keys[j]] = funcs[i]->CreateState();
@@ -208,6 +266,10 @@ std::optional<Batch> GroupByOperator::Next() {
             funcs[i]->Update(states[i][str_keys[j]],
                              cl.GetElementByIndexAsColumn(j));
         }
+    }
+    DLOG(INFO) << "out_names_agg:";
+    for (auto& i : out_names_agg) {
+        DLOG(INFO) << i;
     }
 
     while ((nw = child_->Next())) {
@@ -224,20 +286,22 @@ std::optional<Batch> GroupByOperator::Next() {
         }
     }
 
+    DLOG(INFO) << "states size: " << states[0].size();
+
     std::vector<Column> res_aggs(aggregations_.size());
-    for (size_t i = 0; i < aggregations_.size(); ++i) {
-        DispatchColumnHelper(
-            out_types[i], [&res_aggs, &out_types, &i]<Types Dst>() {
-                using cpptype = EnumToCpp<Dst>::Type;
-                res_aggs[i] = Column(std::vector<cpptype>(), out_types[i]);
-            });
-    }
+    std::vector<Types> out_key_types(keys_.size(), Types::kString);
+    std::vector<Types> out_types_agg(aggregations_.size());
     for (size_t i = 0; i < aggregations_.size(); ++i) {
         for (auto& [a, b] : states[i]) {
-            res_aggs[i].MergeWithOtherColumn(
-                funcs[i]->Finalize(b, out_types[i]));
+            if (res_aggs[i].GetSize() == 0) {
+                res_aggs[i] = funcs[i]->Finalize(b);
+                out_types_agg[i] = res_aggs[i].GetType();
+            } else {
+                res_aggs[i].MergeWithOtherColumn(funcs[i]->Finalize(b));
+            }
         }
     }
+
     std::vector<Column> res_keys;
     {
         std::vector<std::string> strs;
@@ -246,55 +310,136 @@ std::optional<Batch> GroupByOperator::Next() {
         }
         res_keys = key_decoder(strs, keys_.size());
     }
-    std::vector<Types> key_types(keys_.size(), Types::kString);
-    key_types.insert(key_types.end(), out_types.begin(), out_types.end());
+    out_key_types.insert(out_key_types.end(), out_types_agg.begin(),
+                         out_types_agg.end());
     res_keys.insert(res_keys.end(), res_aggs.begin(), res_aggs.end());
-    return Batch(
-        Schema(std::vector<std::string>(res_keys.size(), "asd"), key_types),
-        std::move(res_keys));
+    out_names_keys.insert(out_names_keys.end(), out_names_agg.begin(),
+                          out_names_agg.end());
+    return Batch(Schema(out_names_keys, out_key_types), std::move(res_keys));
 }
 
-// OrderByLimitOperator::OrderByLimitOperator(std::shared_ptr<IOperator> child,
-//                                            std::shared_ptr<IExpression> keys,
-//                                            size_t limit)
-//     : child_(std::move(child)), keys_(std::move(keys)), limit_(limit) {
-// }
+class MultiMapBase {
+public:
+    virtual ~MultiMapBase() = default;
+};
 
-// std::optional<Batch> OrderByLimitOperator::Next() {
-//     std::multimap<ValueType, Batch> res_map;
-//     std::optional<Batch> nw = child_->Next();
-//     while (nw) {
-//         Column order_cl = keys_->Evaluate(*nw);
-//         DispatchColumnHelper(
-//             order_cl.GetType(), [&res_map, &nw, &order_cl, this]<Types Src>()
-//             {
-//                 using Type = typename EnumToCpp<Src>::Type;
-//                 for (size_t i = 0; i < order_cl.GetSize(); ++i) {
-//                     if (res_map.size() < limit_) {
-//                         res_map.insert({order_cl.GetElementByIndex<Type>(i),
-//                                         nw->GetRow(i)});
-//                         continue;
-//                     }
-//                     if (order_cl.GetElementByIndex<Type>(i) <
-//                         res_map.rbegin()->first) {
-//                         res_map.erase(res_map.rbegin()->first);
-//                         res_map.insert({order_cl.GetElementByIndex<Type>(i),
-//                                         nw->GetRow(i)});
-//                     }
-//                 }
-//             });
-//         nw = child_->Next();
-//     }
+template <typename T>
+class MultiMap : public MultiMapBase {
+public:
+    ~MultiMap() override = default;
+    std::multimap<T, Batch> map4ik;
+};
 
-//     if (res_map.empty()) {
-//         return std::nullopt;
-//     }
+OrderByOperator::OrderByOperator(std::shared_ptr<IOperator> child,
+                                 std::shared_ptr<IExpression> keys)
+    : child_(std::move(child)), keys_(std::move(keys)) {
+}
 
-//     auto it = res_map.begin();
-//     Batch res = std::move(it->second);
-//     ++it;
-//     for (; it != res_map.end(); ++it) {
-//         res.MergeWithOtherBatch(std::move(it->second));
-//     }
-//     return res;
-// }
+std::optional<Batch> OrderByOperator::Next() {
+    DLOG(INFO) << "Order By next start";
+    std::shared_ptr<MultiMapBase> res_map_ptr;
+    std::optional<Batch> nw = child_->Next();
+    Column order_cl = keys_->Evaluate(*nw);
+    DispatchColumnHelper(order_cl.GetType(), [&res_map_ptr]<Types Src>() {
+        using cpptype = typename EnumToCpp<Src>::Type;
+        res_map_ptr = std::make_shared<MultiMap<cpptype>>();
+    });
+    DLOG(INFO) << "map created successfully";
+
+    while (nw) {
+        order_cl = keys_->Evaluate(*nw);
+        DispatchColumnHelper(order_cl.GetType(), [&res_map_ptr, &nw,
+                                                  &order_cl]<Types Src>() {
+            using cpptype = typename EnumToCpp<Src>::Type;
+            std::shared_ptr<MultiMap<cpptype>> map_ptr =
+                dynamic_pointer_cast<MultiMap<cpptype>>(res_map_ptr);
+            for (size_t i = 0; i < order_cl.GetSize(); ++i) {
+                map_ptr->map4ik.insert(
+                    {order_cl.GetElementByIndex<cpptype>(i), nw->GetRow(i)});
+            }
+        });
+
+        nw = child_->Next();
+    }
+    DLOG(INFO) << "map filled successfully";
+    Batch res;
+
+    DispatchColumnHelper(order_cl.GetType(), [&res_map_ptr, &res]<Types Src>() {
+        using cpptype = typename EnumToCpp<Src>::Type;
+        std::shared_ptr<MultiMap<cpptype>> map_ptr =
+            dynamic_pointer_cast<MultiMap<cpptype>>(res_map_ptr);
+        DLOG(INFO) << "size: " << map_ptr->map4ik.size();
+        auto it = map_ptr->map4ik.rbegin();
+        DLOG(INFO) << "it created";
+        Batch temp = std::move(it->second);
+        DLOG(INFO) << "Base temp created";
+        ++it;
+        DLOG(INFO) << "it decremented";
+        for (; it != map_ptr->map4ik.rend(); ++it) {
+            temp.MergeWithOtherBatch(std::move(it->second));
+            DLOG(INFO) << "merged, next";
+        }
+
+        res = std::move(temp);
+    });
+    DLOG(INFO) << "res filled successfully";
+    return res;
+}
+
+OrderByLimitOperator::OrderByLimitOperator(std::shared_ptr<IOperator> child,
+                                           std::shared_ptr<IExpression> keys,
+                                           size_t limit)
+    : child_(std::move(child)), keys_(std::move(keys)), limit_(limit) {
+}
+
+std::optional<Batch> OrderByLimitOperator::Next() {
+    std::shared_ptr<MultiMapBase> res_map_ptr;
+    std::optional<Batch> nw = child_->Next();
+    Column order_cl = keys_->Evaluate(*nw);
+    DispatchColumnHelper(order_cl.GetType(), [&res_map_ptr]<Types Src>() {
+        using cpptype = typename EnumToCpp<Src>::Type;
+        res_map_ptr = std::make_shared<MultiMap<cpptype>>();
+    });
+
+    while (nw) {
+        order_cl = keys_->Evaluate(*nw);
+        DispatchColumnHelper(order_cl.GetType(), [&res_map_ptr, &nw, &order_cl,
+                                                  this]<Types Src>() {
+            using cpptype = typename EnumToCpp<Src>::Type;
+            std::shared_ptr<MultiMap<cpptype>> map_ptr =
+                dynamic_pointer_cast<MultiMap<cpptype>>(res_map_ptr);
+            for (size_t i = 0; i < order_cl.GetSize(); ++i) {
+                if (map_ptr->map4ik.size() < limit_) {
+                    map_ptr->map4ik.insert(
+                        {order_cl.GetElementByIndex<cpptype>(i),
+                         nw->GetRow(i)});
+                    continue;
+                }
+                if (order_cl.GetElementByIndex<cpptype>(i) >
+                    map_ptr->map4ik.begin()->first) {
+                    map_ptr->map4ik.erase(map_ptr->map4ik.begin());
+                    map_ptr->map4ik.insert(
+                        {order_cl.GetElementByIndex<cpptype>(i),
+                         nw->GetRow(i)});
+                }
+            }
+        });
+        nw = child_->Next();
+    }
+    Batch res;
+
+    DispatchColumnHelper(order_cl.GetType(), [&res_map_ptr, &res]<Types Src>() {
+        using cpptype = typename EnumToCpp<Src>::Type;
+        std::shared_ptr<MultiMap<cpptype>> map_ptr =
+            dynamic_pointer_cast<MultiMap<cpptype>>(res_map_ptr);
+        auto it = map_ptr->map4ik.rbegin();
+        Batch temp = std::move(it->second);
+        ++it;
+        for (; it != map_ptr->map4ik.rend(); ++it) {
+            temp.MergeWithOtherBatch(std::move(it->second));
+        }
+
+        res = std::move(temp);
+    });
+    return res;
+}

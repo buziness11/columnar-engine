@@ -8,6 +8,9 @@
 #include <variant>
 #include <vector>
 
+CountFunc::CountFunc(Types type) : type_(type) {
+}
+
 std::shared_ptr<IAggregateState> CountFunc::CreateState() {
     return std::make_shared<CountState>();
 }
@@ -19,14 +22,20 @@ void CountFunc::Update(std::shared_ptr<IAggregateState> state,
     if (ptr) {
         ptr->res += col.GetSize();
     } else {
+        DLOG(ERROR) << "Cannot cast count state ptr for type: "
+                    << TypeToString(col.GetType());
         throw std::exception();
     }
 }
 
-Column CountFunc::Finalize(std::shared_ptr<IAggregateState> state, Types) {
+Column CountFunc::Finalize(std::shared_ptr<IAggregateState> state) {
     std::shared_ptr<CountState> ptr =
         std::dynamic_pointer_cast<CountState>(state);
     return Column(std::vector<int32_t>(1, ptr->res), Types::kInt32_t);
+}
+
+Types CountFunc::GetInType() const {
+    return type_;
 }
 
 ///////////////////////////////////////////////////////////////////////////////////
@@ -91,7 +100,7 @@ void SumFunc::Update(std::shared_ptr<IAggregateState> state,
         col.GetData());
 }
 
-Column SumFunc::Finalize(std::shared_ptr<IAggregateState> state, Types) {
+Column SumFunc::Finalize(std::shared_ptr<IAggregateState> state) {
     if (type_ == Types::kInt16_t || type_ == Types::kInt32_t ||
         type_ == Types::kInt64_t) {
         std::shared_ptr<SumState<int64_t>> ptr =
@@ -107,9 +116,16 @@ Column SumFunc::Finalize(std::shared_ptr<IAggregateState> state, Types) {
     throw std::exception();
 }
 
+Types SumFunc::GetInType() const {
+    return type_;
+}
+
 ///////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////
+
+AvgFunc::AvgFunc(Types type) : type_(type) {
+}
 
 std::shared_ptr<IAggregateState> AvgFunc::CreateState() {
     return std::make_shared<AvgState>();
@@ -147,7 +163,7 @@ void AvgFunc::Update(std::shared_ptr<IAggregateState> state,
                col.GetData());
 }
 
-Column AvgFunc::Finalize(std::shared_ptr<IAggregateState> state, Types) {
+Column AvgFunc::Finalize(std::shared_ptr<IAggregateState> state) {
     std::shared_ptr<AvgState> ptr = std::dynamic_pointer_cast<AvgState>(state);
     if (!ptr) {
         DLOG(ERROR) << "Wrong avg state in finalize";
@@ -156,6 +172,10 @@ Column AvgFunc::Finalize(std::shared_ptr<IAggregateState> state, Types) {
     return Column(
         std::vector<long double>{ptr->sum / static_cast<long double>(ptr->cnt)},
         Types::kLongDouble);
+}
+
+Types AvgFunc::GetInType() const {
+    return type_;
 }
 
 ///////////////////////////////////////////////////////////////////////////////////
@@ -196,8 +216,7 @@ void CountDistinctFunc::Update(std::shared_ptr<IAggregateState> state,
         col.GetData());
 }
 
-Column CountDistinctFunc::Finalize(std::shared_ptr<IAggregateState> state,
-                                   Types) {
+Column CountDistinctFunc::Finalize(std::shared_ptr<IAggregateState> state) {
     Column res;
     DispatchColumnHelper(type_, [&state, &res]<Types Dst>() {
         using cpptype = EnumToCpp<Dst>::Type;
@@ -208,6 +227,10 @@ Column CountDistinctFunc::Finalize(std::shared_ptr<IAggregateState> state,
                    Types::kInt32_t);
     });
     return res;
+}
+
+Types CountDistinctFunc::GetInType() const {
+    return type_;
 }
 
 ///////////////////////////////////////////////////////////////////////////////////
@@ -252,7 +275,7 @@ void MinFunc::Update(std::shared_ptr<IAggregateState> state,
         col.GetData());
 }
 
-Column MinFunc::Finalize(std::shared_ptr<IAggregateState> state, Types) {
+Column MinFunc::Finalize(std::shared_ptr<IAggregateState> state) {
     Column res;
     DispatchColumnHelper(type_, [&state, &res, this]<Types Dst>() {
         using cpptype = EnumToCpp<Dst>::Type;
@@ -261,6 +284,10 @@ Column MinFunc::Finalize(std::shared_ptr<IAggregateState> state, Types) {
         res = Column(std::vector<cpptype>{ptr->res}, type_);
     });
     return res;
+}
+
+Types MinFunc::GetInType() const {
+    return type_;
 }
 
 ///////////////////////////////////////////////////////////////////////////////////
@@ -308,7 +335,7 @@ void MaxFunc::Update(std::shared_ptr<IAggregateState> state,
         col.GetData());
 }
 
-Column MaxFunc::Finalize(std::shared_ptr<IAggregateState> state, Types) {
+Column MaxFunc::Finalize(std::shared_ptr<IAggregateState> state) {
     Column res;
     DispatchColumnHelper(type_, [&state, &res, this]<Types Dst>() {
         using cpptype = EnumToCpp<Dst>::Type;
@@ -317,4 +344,8 @@ Column MaxFunc::Finalize(std::shared_ptr<IAggregateState> state, Types) {
         res = Column(std::vector<cpptype>{ptr->res}, type_);
     });
     return res;
+}
+
+Types MaxFunc::GetInType() const {
+    return type_;
 }

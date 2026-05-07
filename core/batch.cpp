@@ -15,6 +15,13 @@ Batch::Batch(Schema&& sch, std::vector<Column>&& col)
                     << sch.GetCntColumns() << ' ' << data_.size();
         throw std::exception();
     }
+    for (size_t i = 0; i < data_.size(); ++i) {
+        if (schema_.GetTypes()[i] != data_[i].GetType()) {
+            DLOG(ERROR) << "schema type neq data type : "
+                        << TypeToString(schema_.GetTypes()[i]) << ' '
+                        << TypeToString(data_[i].GetType());
+        }
+    }
 }
 
 Batch::Batch(const Schema& sch, std::vector<Column>&& col)
@@ -23,6 +30,13 @@ Batch::Batch(const Schema& sch, std::vector<Column>&& col)
         DLOG(ERROR) << "schema cnt cols neq real cnt cols : "
                     << sch.GetCntColumns() << ' ' << data_.size();
         throw std::exception();
+    }
+    for (size_t i = 0; i < data_.size(); ++i) {
+        if (schema_.GetTypes()[i] != data_[i].GetType()) {
+            DLOG(ERROR) << "schema type neq data type : "
+                        << TypeToString(schema_.GetTypes()[i]) << ' '
+                        << TypeToString(data_[i].GetType());
+        }
     }
 }
 

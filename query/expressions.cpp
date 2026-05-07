@@ -1,20 +1,25 @@
 #include "query/expressions.h"
 #include <cstddef>
 #include <exception>
+#include <string>
 #include <variant>
 #include "core/column.h"
 #include "core/types.h"
 
-ColumnRef::ColumnRef(const std::string& name) : column_name_(name) {
+ColumnRef::ColumnRef(const std::string& name) : name_(name) {
 }
 
 Column ColumnRef::Evaluate(const Batch& batch) {
-    return batch.GetColumnByName(column_name_);
+    return batch.GetColumnByName(name_);
+}
+
+std::string ColumnRef::GetName() const {
+    return name_;
 }
 
 BinaryCmp::BinaryCmp(std::shared_ptr<IExpression> left, CmpType cmp_type,
-                     std::shared_ptr<IExpression> right)
-    : left_(left), cmp_type_(cmp_type), right_(right) {
+                     std::shared_ptr<IExpression> right, std::string name)
+    : left_(left), cmp_type_(cmp_type), right_(right), name_(name) {
 }
 
 Column BinaryCmp::Evaluate(const Batch& b) {
@@ -102,4 +107,8 @@ Column BinaryCmp::Evaluate(const Batch& b) {
         }},
         l.GetData());
     return res;
+}
+
+std::string BinaryCmp::GetName() const {
+    return name_;
 }

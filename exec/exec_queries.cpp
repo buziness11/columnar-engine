@@ -126,14 +126,97 @@ void Execute6() {
     csv_w.WriteBatch(*res);
 }
 void Execute7() {
+    DLOG(INFO) << "7th que";
+    exe::OperPtr scan = GetScanner({"AdvEngineID"});
+    exe::ExprPtr AdvEngineID = std::make_shared<ColumnRef>("AdvEngineID");
+    exe::ExprPtr ZeroLiteral =
+        std::make_shared<Literal<int16_t>>(0, Types::kInt16_t);
+    exe::ExprPtr Cmp =
+        std::make_shared<BinaryCmp>(AdvEngineID, CmpType::Neq, ZeroLiteral);
+    exe::OperPtr filter = std::make_shared<FilterOperator>(scan, Cmp);
+
+    exe::OperPtr group_by = std::make_shared<GroupByOperator>(
+        filter, std::vector<AggregateType>{AggregateType::Count},
+        std::vector<exe::ExprPtr>{AdvEngineID},
+        std::vector<exe::ExprPtr>{AdvEngineID});
+
+    exe::ExprPtr count_AdvEngineID =
+        std::make_shared<ColumnRef>(ColumnRef("count_AdvEngineID"));
+
+    exe::OperPtr order_by =
+        std::make_shared<OrderByOperator>(group_by, count_AdvEngineID);
+
+    CsvWriter csv_w(&res_file);
+    csv_w.WriteBatch(*order_by->Next());
 }
 
 void Execute8() {
+    DLOG(INFO) << "8th que";
+    exe::OperPtr scan = GetScanner({"RegionID", "UserID"});
+    exe::ExprPtr RegionID = std::make_shared<ColumnRef>("RegionID");
+    exe::ExprPtr UserID = std::make_shared<ColumnRef>("UserID");
+
+    exe::OperPtr group_by = std::make_shared<GroupByOperator>(
+        scan, std::vector<AggregateType>{AggregateType::CountDistinct},
+        std::vector<exe::ExprPtr>{UserID}, std::vector<exe::ExprPtr>{RegionID});
+
+    exe::ExprPtr u = std::make_shared<ColumnRef>("count_distinct_UserID");
+    exe::OperPtr order_by_limit =
+        std::make_shared<OrderByLimitOperator>(group_by, u, 10);
+
+    CsvWriter csv_w(&res_file);
+    csv_w.WriteBatch(*order_by_limit->Next());
 }
 void Execute9() {
+    DLOG(INFO) << "9th que";
+    exe::OperPtr scan =
+        GetScanner({"RegionID", "AdvEngineID", "ResolutionWidth", "UserID"});
+    exe::ExprPtr RegionID = std::make_shared<ColumnRef>("RegionID");
+    exe::ExprPtr AdvEngineID = std::make_shared<ColumnRef>("AdvEngineID");
+    exe::ExprPtr ResolutionWidth =
+        std::make_shared<ColumnRef>("ResolutionWidth");
+    exe::ExprPtr UserID = std::make_shared<ColumnRef>("UserID");
+
+    exe::OperPtr group_by = std::make_shared<GroupByOperator>(
+        scan,
+        std::vector<AggregateType>{AggregateType::Sum, AggregateType::Count,
+                                   AggregateType::Avg,
+                                   AggregateType::CountDistinct},
+        std::vector<exe::ExprPtr>{AdvEngineID, RegionID, ResolutionWidth,
+                                  UserID},
+        std::vector<exe::ExprPtr>{RegionID});
+
+    exe::ExprPtr c = std::make_shared<ColumnRef>("count_RegionID");
+    exe::OperPtr order_by_limit =
+        std::make_shared<OrderByLimitOperator>(group_by, c, 10);
+
+    CsvWriter csv_w(&res_file);
+    csv_w.WriteBatch(*order_by_limit->Next());
 }
 
 void Execute10() {
+    DLOG(INFO) << "10th que";
+    exe::OperPtr scan = GetScanner({"MobilePhoneModel", "UserID"});
+    exe::ExprPtr MobilePhoneModel =
+        std::make_shared<ColumnRef>("MobilePhoneModel");
+    exe::ExprPtr UserID = std::make_shared<ColumnRef>("UserID");
+    exe::ExprPtr EmptyLiteral =
+        std::make_shared<Literal<std::string>>("", Types::kString);
+    exe::ExprPtr Cmp = std::make_shared<BinaryCmp>(MobilePhoneModel,
+                                                   CmpType::Neq, EmptyLiteral);
+    exe::OperPtr filter = std::make_shared<FilterOperator>(scan, Cmp);
+
+    exe::OperPtr group_by = std::make_shared<GroupByOperator>(
+        filter, std::vector<AggregateType>{AggregateType::CountDistinct},
+        std::vector<exe::ExprPtr>{UserID},
+        std::vector<exe::ExprPtr>{MobilePhoneModel});
+
+    exe::ExprPtr u = std::make_shared<ColumnRef>("count_distinct_UserID");
+    exe::OperPtr order_by_limit =
+        std::make_shared<OrderByLimitOperator>(group_by, u, 10);
+
+    CsvWriter csv_w(&res_file);
+    csv_w.WriteBatch(*order_by_limit->Next());
 }
 void Execute11() {
 }
