@@ -39,6 +39,10 @@ private:
 
 enum class AggregateType { Sum, Count, CountDistinct, Min, Max, Avg };
 
+std::string AggregateTypeToString(AggregateType type);
+
+AggregateType StringToAggregateType(const std::string& str);
+
 class AggregateOperator : public IOperator {
 public:
     AggregateOperator(std::shared_ptr<IOperator> child,
@@ -67,14 +71,25 @@ private:
     std::vector<std::shared_ptr<IExpression>> keys_;
 };
 
-// class OrderByLimitOperator : public IOperator {
-// public:
-//     OrderByLimitOperator(std::shared_ptr<IOperator> child,
-//                          std::shared_ptr<IExpression> keys, size_t limit);
-//     std::optional<Batch> Next() override;
+class OrderByOperator : public IOperator {
+public:
+    OrderByOperator(std::shared_ptr<IOperator> child,
+                    std::shared_ptr<IExpression> keys);
+    std::optional<Batch> Next() override;
 
-// private:
-//     std::shared_ptr<IOperator> child_;
-//     std::shared_ptr<IExpression> keys_;
-//     size_t limit_;
-// };
+private:
+    std::shared_ptr<IOperator> child_;
+    std::shared_ptr<IExpression> keys_;
+};
+
+class OrderByLimitOperator : public IOperator {
+public:
+    OrderByLimitOperator(std::shared_ptr<IOperator> child,
+                         std::shared_ptr<IExpression> keys, size_t limit);
+    std::optional<Batch> Next() override;
+
+private:
+    std::shared_ptr<IOperator> child_;
+    std::shared_ptr<IExpression> keys_;
+    size_t limit_;
+};
