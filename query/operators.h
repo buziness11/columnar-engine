@@ -2,11 +2,14 @@
 
 #include "core/batch.h"
 #include "core/column.h"
+#include "query/aggregate.h"
 #include "query/expressions.h"
 #include "io/my-format.h"
+#include <cstdint>
 #include <memory>
 #include <optional>
 #include <string>
+#include <unordered_map>
 
 class IOperator {
 public:
@@ -74,22 +77,35 @@ private:
 class OrderByOperator : public IOperator {
 public:
     OrderByOperator(std::shared_ptr<IOperator> child,
-                    std::shared_ptr<IExpression> keys);
+                    std::shared_ptr<IExpression> keys, bool desc = true);
     std::optional<Batch> Next() override;
 
 private:
     std::shared_ptr<IOperator> child_;
     std::shared_ptr<IExpression> keys_;
+    bool desc_;
 };
 
 class OrderByLimitOperator : public IOperator {
 public:
     OrderByLimitOperator(std::shared_ptr<IOperator> child,
-                         std::shared_ptr<IExpression> keys, size_t limit);
+                         std::shared_ptr<IExpression> keys, size_t limit,
+                         bool desc = true);
     std::optional<Batch> Next() override;
 
 private:
     std::shared_ptr<IOperator> child_;
     std::shared_ptr<IExpression> keys_;
+    size_t limit_;
+    bool desc_;
+};
+
+class LimitOperator : public IOperator {
+public:
+    LimitOperator(std::shared_ptr<IOperator> child, size_t limit);
+    std::optional<Batch> Next() override;
+
+private:
+    std::shared_ptr<IOperator> child_;
     size_t limit_;
 };

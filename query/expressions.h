@@ -14,7 +14,7 @@ public:
 
 class ColumnRef : public IExpression {
 public:
-    ColumnRef(const std::string& name);
+    ColumnRef(const std::string& name = "");
     ~ColumnRef() override = default;
     Column Evaluate(const Batch&) override;
     std::string GetName() const override;
@@ -48,7 +48,7 @@ enum class CmpType { L, Leq, Eq, G, Geq, Neq };
 class BinaryCmp : public IExpression {
 public:
     BinaryCmp(std::shared_ptr<IExpression> left, CmpType cmp_type,
-              std::shared_ptr<IExpression> right, std::string name = "");
+              std::shared_ptr<IExpression> right, const std::string& name = "");
     ~BinaryCmp() override = default;
     Column Evaluate(const Batch&) override;
     std::string GetName() const override;
@@ -74,5 +74,19 @@ private:
     std::shared_ptr<IExpression> left_;
     FuncType bin_func_;
     std::shared_ptr<IExpression> right_;
+    std::string name_;
+};
+
+class Like : public IExpression {
+public:
+    Like(std::shared_ptr<IExpression>, const std::string& pattern,
+         const std::string& name = "");
+    ~Like() override = default;
+    Column Evaluate(const Batch&) override;
+    std::string GetName() const override;
+
+private:
+    std::shared_ptr<IExpression> child_;
+    std::string pattern_;
     std::string name_;
 };

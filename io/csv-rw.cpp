@@ -124,10 +124,21 @@ bool CsvReader::IsReaded() {
 CsvWriter::CsvWriter(std::fstream* output, bool lf) : out_(output), lf_(lf) {
 }
 
-std::string ScreenString(std::string&& s) {
-    std::string res = "\"";
-    res += s;
-    res.push_back('\"');
+std::string ScreenString(std::string&& s, char delim) {
+    std::string res;
+    bool need_quote = false;
+    for (auto i : s) {
+        if (i == '\n' || i == '\"' || i == delim || i == '\r') {
+            need_quote = true;
+        }
+        if (i == '\"') {
+            res.push_back('\"');
+        }
+        res.push_back(i);
+    }
+    if (need_quote) {
+        return '\"' + res + '\"';
+    }
     return res;
 }
 
@@ -157,11 +168,11 @@ void CsvWriter::WriteBatch(Batch bat, char delim) {
     for (size_t i = 0; i < batch_data[0].size(); ++i) {
         std::string screened_str;
         for (int j = 0; j < static_cast<int>(batch_data.size()) - 1; ++j) {
-            screened_str = ScreenString(std::move(batch_data[j][i]));
+            screened_str = ScreenString(std::move(batch_data[j][i]), delim);
             out_->write(screened_str.data(), screened_str.size());
             out_->put(delim);
         }
-        screened_str = ScreenString(std::move(batch_data.back()[i]));
+        screened_str = ScreenString(std::move(batch_data.back()[i]), delim);
         out_->write(screened_str.data(), screened_str.size());
         if (!lf_) {
             out_->put('\r');
