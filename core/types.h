@@ -1,10 +1,12 @@
 #pragma once
 
+#include <charconv>
 #include <cstdint>
 #include <cstring>
 #include <exception>
 #include <fstream>
 #include <string>
+#include <type_traits>
 #include <variant>
 #include <vector>
 #include <chrono>
@@ -23,79 +25,6 @@ enum class Types {
     kDouble,
     kLongDouble
 };
-
-using ColumnType = std::variant<std::vector<int16_t>, std::vector<int32_t>,
-                                std::vector<int64_t>, std::vector<std::string>,
-                                std::vector<double>, std::vector<long double>,
-                                std::vector<bool>>;
-
-using ValueType = std::variant<int16_t, int32_t, int64_t, std::string, double,
-                               long double, bool>;
-
-std::string TypeToString(Types t);
-
-Types StringToType(const std::string& s);
-Types StringToType(std::string&& s);
-
-///////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////
-
-template <Types T>
-concept NumericType = (T == Types::kInt16_t) || (T == Types::kInt32_t) ||
-                      (T == Types::kInt64_t) || (T == Types::kDouble) ||
-                      (T == Types::kLongDouble);
-
-template <Types T>
-concept StringType = (T == Types::kString);
-
-template <Types T, Types U, typename X>
-    requires(T == U)
-X TranslateTtoU(X a) {
-    return a;
-}
-
-template <Types T, Types U, typename X>
-    requires NumericType<T> && StringType<U>
-std::string TranslateTtoU(X a) {
-    return std::to_string(a);
-}
-
-template <Types T, Types U>
-    requires StringType<T> && NumericType<U>
-auto TranslateTtoU(std::string s) {
-    return std::stoll(s);  // poh
-}
-
-template <Types T, Types U, typename X>
-    requires NumericType<T> && NumericType<U>
-auto TranslateTtoU(X a) {
-    return a;  // poh
-}
-
-template <Types T, Types U>
-    requires(T == Types::kDate) && (U == Types::kString)
-std::string TranslateTtoU(int32_t days_from_1970_01_01) {
-    return GetYyyyMmDd(days_from_1970_01_01);
-}
-
-template <Types T, Types U>
-    requires(T == Types::kString) && (U == Types::kDate)
-int32_t TranslateTtoU(const std::string& yyyy_mm_dd) {
-    return DaysCount(yyyy_mm_dd);
-}
-
-template <Types T, Types U>
-    requires(T == Types::kTimestamp) && (U == Types::kString)
-std::string TranslateTtoU(int64_t seconds_from_1970_01_01) {
-    return GetYyyyMmDdHhMmSs(seconds_from_1970_01_01);
-}
-
-template <Types T, Types U>
-    requires(T == Types::kString) && (U == Types::kTimestamp)
-int64_t TranslateTtoU(const std::string& yyyy_mm_dd_hh_mm_ss) {
-    return SecondsCount(yyyy_mm_dd_hh_mm_ss);
-}
 
 template <Types T>
 struct EnumToCpp;
@@ -135,3 +64,87 @@ template <>
 struct EnumToCpp<Types::kBool> {
     using Type = bool;
 };
+
+using ColumnType = std::variant<std::vector<int16_t>,
+                                std::vector<int32_t>,
+                                std::vector<int64_t>,
+                                std::vector<std::string>,
+                                std::vector<double>,
+                                std::vector<long double>,
+                                std::vector<bool>>;
+
+using ValueType = std::
+    variant<int16_t, int32_t, int64_t, std::string, double, long double, bool>;
+
+std::string TypeToString(Types t);
+
+Types StringToType(const std::string& s);
+Types StringToType(std::string&& s);
+
+///////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////
+
+template <Types T>
+concept NumericType = (T == Types::kInt16_t) || (T == Types::kInt32_t) ||
+                      (T == Types::kInt64_t) || (T == Types::kDouble) ||
+                      (T == Types::kLongDouble);
+
+template <Types T>
+concept StringType = (T == Types::kString);
+
+template <Types T, Types U, typename X>
+requires(T == U) X TranslateTtoU(X a) {
+    return a;
+}
+
+template <Types T, Types U, typename X>
+requires NumericType<T>&& StringType<U> std::string TranslateTtoU(X a) {
+    return std::to_string(a);
+}
+
+template <Types T, Types U>
+    requires StringType<T>&& NumericType<U> &&
+    (U != Types::kLongDouble) auto TranslateTtoU(const std::string& s) {
+    using ToType = typename EnumToCpp<U>::Type;
+    ToType res;
+    std::from_chars(s.data(), s.data() + s.size(), res);
+    return res;
+}
+
+template <Types T, Types U>
+    requires StringType<T>&& NumericType<U> &&
+    (U == Types::kLongDouble) auto TranslateTtoU(const std::string& s) {
+    return std::stold(s);
+}
+
+template <Types T, Types U, typename X>
+requires NumericType<T>&& NumericType<U>&& std::is_arithmetic_v<X> auto
+TranslateTtoU(X a) {
+    using ToType = typename EnumToCpp<U>::Type;
+    return static_cast<ToType>(a);
+}
+
+template <Types T, Types U>
+    requires(T == Types::kDate) && (U == Types::kString) std::string
+    TranslateTtoU(int32_t days_from_1970_01_01) {
+    return GetYyyyMmDd(days_from_1970_01_01);
+}
+
+template <Types T, Types U>
+    requires(T == Types::kString) && (U == Types::kDate) int32_t
+    TranslateTtoU(const std::string& yyyy_mm_dd) {
+    return DaysCount(yyyy_mm_dd);
+}
+
+template <Types T, Types U>
+    requires(T == Types::kTimestamp) && (U == Types::kString) std::string
+    TranslateTtoU(int64_t seconds_from_1970_01_01) {
+    return GetYyyyMmDdHhMmSs(seconds_from_1970_01_01);
+}
+
+template <Types T, Types U>
+    requires(T == Types::kString) && (U == Types::kTimestamp) int64_t
+    TranslateTtoU(const std::string& yyyy_mm_dd_hh_mm_ss) {
+    return SecondsCount(yyyy_mm_dd_hh_mm_ss);
+}

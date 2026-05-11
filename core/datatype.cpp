@@ -1,72 +1,119 @@
 #include "core/datatype.h"
+#include "core/rwconsts.h"
 #include <algorithm>
 #include <array>
+#include <charconv>
 #include <cstdint>
 #include <exception>
 #include <format>
-#include <string>
 #include <glog/logging.h>
-#include "core/rwconsts.h"
-inline bool IsLeap(int32_t year) {
-    return (year % 400 == 0) || (year % 100 != 0 and year % 4 == 0);
+#include <string>
+
+// В нашей таске нам неважно работать с чужими форматами
+// Нам важно поддерживать следующие операции
+// data_1 </=/>/<=/>=/+/- data_2
+// Поэтому поддерживаются следующие суждения
+// 1. В месяце 32 дня
+// 2. В году 512 дней
+
+int32_t inline GetSeconds(const std::string& yyyy_mm_dd_hh_mm_ss) {
+    int32_t second;
+    std::from_chars(yyyy_mm_dd_hh_mm_ss.data() + 17,
+                    yyyy_mm_dd_hh_mm_ss.data() + 19,
+                    second);
+    return second;
+}
+
+int32_t inline GetMinutes(const std::string& yyyy_mm_dd_hh_mm_ss) {
+    int32_t minute;
+    std::from_chars(yyyy_mm_dd_hh_mm_ss.data() + 14,
+                    yyyy_mm_dd_hh_mm_ss.data() + 16,
+                    minute);
+    return minute;
+}
+
+int32_t inline GetHours(const std::string& yyyy_mm_dd_hh_mm_ss) {
+    int32_t hour;
+    std::from_chars(yyyy_mm_dd_hh_mm_ss.data() + 11,
+                    yyyy_mm_dd_hh_mm_ss.data() + 13,
+                    hour);
+    return hour;
+}
+
+int32_t inline GetDays(const std::string& yyyy_mm_dd_hh_mm_ss) {
+    int32_t day;
+    std::from_chars(yyyy_mm_dd_hh_mm_ss.data() + 8,
+                    yyyy_mm_dd_hh_mm_ss.data() + 10,
+                    day);
+    return day;
+}
+
+int32_t inline GetMonths(const std::string& yyyy_mm_dd_hh_mm_ss) {
+    int32_t month;
+    std::from_chars(yyyy_mm_dd_hh_mm_ss.data() + 5,
+                    yyyy_mm_dd_hh_mm_ss.data() + 7,
+                    month);
+    return month;
+}
+int32_t inline GetYears(const std::string& yyyy_mm_dd_hh_mm_ss) {
+    int32_t year;
+    std::from_chars(yyyy_mm_dd_hh_mm_ss.data(),
+                    yyyy_mm_dd_hh_mm_ss.data() + 4,
+                    year);
+    return year;
+}
+
+int32_t inline GetSeconds(int64_t seconds) {
+    return seconds % 60;
+}
+int32_t inline GetMinutes(int64_t seconds) {
+    return (seconds / kSecondsPerMinute) % 60;
+}
+int32_t inline GetHours(int64_t seconds) {
+    return (seconds / kSecondsPerHour) % 24;
+}
+int32_t inline GetDays(int64_t seconds) {
+    return (seconds / kSecondsPerDay) % 32 + 1;
+}
+int32_t inline GetMonths(int64_t seconds) {
+    return (seconds / kSecondsPerDay) / 32 + 1;
+}
+int32_t inline GetYears(int64_t seconds) {
+    return (seconds / kSecondsPerDay) / 512 + 1970;
 }
 
 int32_t DaysCount(const std::string& yyyy_mm_dd) {
-    int64_t year = std::stoll(
-        std::move(std::string(yyyy_mm_dd.begin(), yyyy_mm_dd.begin() + 4)));
+    int32_t year;
+    std::from_chars(yyyy_mm_dd.data(), yyyy_mm_dd.data() + 4, year);
     year -= 1970;
-    int64_t month = std::stoll(
-        std::move(std::string(yyyy_mm_dd.begin() + 5, yyyy_mm_dd.begin() + 7)));
-    month -= 1;
-    int64_t day = std::stoll(std::move(
-        std::string(yyyy_mm_dd.begin() + 8, yyyy_mm_dd.begin() + 10)));
-    day -= 1;
-    day += kYearPrefDays[year];
-    if (IsLeap(year)) {
-        day += kMonthPrefDaysLeap[month];
-    } else {
-        day += kMonthPrefDays[month];
-    }
+
+    int32_t month;
+    std::from_chars(yyyy_mm_dd.data() + 5, yyyy_mm_dd.data() + 7, month);
+    month--;
+
+    int32_t day;
+    std::from_chars(yyyy_mm_dd.data() + 8, yyyy_mm_dd.data() + 10, day);
+    day--;
+    day += year * 512;
+    day += month * 32;
     return day;
 }
 
 int64_t SecondsCount(const std::string& yyyy_mm_dd_hh_mm_ss) {
-    int64_t hour = std::stoll(std::move(std::string(
-        yyyy_mm_dd_hh_mm_ss.begin() + 11, yyyy_mm_dd_hh_mm_ss.begin() + 13)));
-    int64_t minute = std::stoll(std::move(std::string(
-        yyyy_mm_dd_hh_mm_ss.begin() + 14, yyyy_mm_dd_hh_mm_ss.begin() + 16)));
-    int64_t second = std::stoll(std::move(std::string(
-        yyyy_mm_dd_hh_mm_ss.begin() + 17, yyyy_mm_dd_hh_mm_ss.begin() + 19)));
+    int64_t hour = GetHours(yyyy_mm_dd_hh_mm_ss);
+    int64_t minute = GetMinutes(yyyy_mm_dd_hh_mm_ss);
+    int64_t second = GetSeconds(yyyy_mm_dd_hh_mm_ss);
     int64_t day = DaysCount(yyyy_mm_dd_hh_mm_ss);
     return day * kSecondsPerDay + hour * kSecondsPerHour +
            minute * kSecondsPerMinute + second;
 }
 
 std::string GetYyyyMmDd(int32_t days) {
-    auto it_year =
-        std::upper_bound(kYearPrefDays.begin(), kYearPrefDays.end(), days);
-    if (it_year == kYearPrefDays.end()) {
-        DLOG(ERROR) << "bad day";
-        throw std::exception();
-    }
-    days -= *(--it_year);
-    int y_diff = it_year - kYearPrefDays.begin();
-    int year = 1970 + y_diff;
-
-    std::array<const int32_t, 13>::iterator it_month;
-    std::array<const int32_t, 13>::iterator beg;
-    if (IsLeap(year)) {
-        beg = kMonthPrefDaysLeap.begin();
-        it_month = std::upper_bound(kMonthPrefDaysLeap.begin(),
-                                    kMonthPrefDaysLeap.end(), days);
-    } else {
-        beg = kMonthPrefDays.begin();
-        it_month = std::upper_bound(kMonthPrefDays.begin(),
-                                    kMonthPrefDays.end(), days);
-    }
-    int month = it_month - beg;
-    days -= *(--it_month);
-    days += 1;
+    int32_t year = 1970 + days / 512;
+    days %= 512;
+    int32_t month = 1 + days / 32;
+    days %= 32;
+    days++;
     return std::format("{:04d}-{:02d}-{:02d}", year, month, days);
 }
 
@@ -74,7 +121,8 @@ std::string GetYyyyMmDdHhMmSs(int64_t seconds) {
     int32_t days = seconds / kSecondsPerDay;
     seconds = seconds % kSecondsPerDay;
     return GetYyyyMmDd(days) +
-           std::format(" {:02d}:{:02d}:{:02d}", seconds / kSecondsPerHour,
+           std::format(" {:02d}:{:02d}:{:02d}",
+                       seconds / kSecondsPerHour,
                        (seconds % kSecondsPerHour) / kSecondsPerMinute,
                        seconds % kSecondsPerMinute);
 }
