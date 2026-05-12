@@ -2,6 +2,7 @@
 
 #include "core/batch.h"
 #include "core/column.h"
+#include "core/datatype.h"
 #include <cstdint>
 #include <functional>
 #include <memory>
@@ -129,4 +130,19 @@ private:
     std::string name_;
     std::function<int32_t(int64_t)> extract_func_ =
         static_cast<int32_t (*)(int64_t)>(GetMinutes);
+};
+
+class TruncateTime : public IExpression {
+public:
+    TruncateTime(std::shared_ptr<IExpression>,
+                 Trunc trunc,
+                 const std::string& name = "");
+    ~TruncateTime() override = default;
+    Column Evaluate(const Batch&) override;
+    std::string GetName() const override;
+
+private:
+    std::shared_ptr<IExpression> child_;
+    Trunc trunc_;
+    std::string name_;
 };

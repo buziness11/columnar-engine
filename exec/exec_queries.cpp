@@ -932,20 +932,320 @@ void Execute37() {
     csv_w.WriteBatch(*order_by_limit->Next());
 }
 void Execute38() {
-    DLOG(INFO) << "38th que is not supported: AND filters and OFFSET";
+    DLOG(INFO) << "38th que";
+    exe::OperPtr scan = GetScanner(
+        {"URL", "CounterID", "EventDate", "IsRefresh", "IsLink", "IsDownload"});
+    exe::ExprPtr URL = std::make_shared<ColumnRef>("URL");
+    exe::ExprPtr CounterID = std::make_shared<ColumnRef>("CounterID");
+    exe::ExprPtr EventDate = std::make_shared<ColumnRef>("EventDate");
+    exe::ExprPtr IsRefresh = std::make_shared<ColumnRef>("IsRefresh");
+    exe::ExprPtr IsLink = std::make_shared<ColumnRef>("IsLink");
+    exe::ExprPtr IsDownload = std::make_shared<ColumnRef>("IsDownload");
+
+    exe::ExprPtr CounterID_62 = std::make_shared<BinaryCmp>(
+        CounterID,
+        CmpType::Eq,
+        std::make_shared<Literal<int32_t>>(62, Types::kInt32_t));
+
+    exe::ExprPtr EventDate_Geq = std::make_shared<BinaryCmp>(
+        EventDate,
+        CmpType::Geq,
+        std::make_shared<Literal<int32_t>>(DaysCount("2013-07-01"),
+                                           Types::kDate));
+
+    exe::ExprPtr EventDate_Leq = std::make_shared<BinaryCmp>(
+        EventDate,
+        CmpType::Leq,
+        std::make_shared<Literal<int32_t>>(DaysCount("2013-07-31"),
+                                           Types::kDate));
+
+    exe::ExprPtr IsRefresh_0 = std::make_shared<BinaryCmp>(
+        IsRefresh,
+        CmpType::Eq,
+        std::make_shared<Literal<int16_t>>(0, Types::kInt16_t));
+
+    exe::ExprPtr IsLink_Neq_0 = std::make_shared<BinaryCmp>(
+        IsLink,
+        CmpType::Neq,
+        std::make_shared<Literal<int16_t>>(0, Types::kInt16_t));
+
+    exe::ExprPtr IsDownload_0 = std::make_shared<BinaryCmp>(
+        IsDownload,
+        CmpType::Eq,
+        std::make_shared<Literal<int16_t>>(0, Types::kInt16_t));
+
+    exe::ExprPtr And1 = std::make_shared<BinaryFunc>(CounterID_62,
+                                                     FuncType::And,
+                                                     EventDate_Geq);
+    exe::ExprPtr And2 =
+        std::make_shared<BinaryFunc>(And1, FuncType::And, EventDate_Leq);
+    exe::ExprPtr And3 =
+        std::make_shared<BinaryFunc>(And2, FuncType::And, IsRefresh_0);
+    exe::ExprPtr And4 =
+        std::make_shared<BinaryFunc>(And3, FuncType::And, IsLink_Neq_0);
+    exe::ExprPtr And5 =
+        std::make_shared<BinaryFunc>(And4, FuncType::And, IsDownload_0);
+
+    exe::OperPtr filter = std::make_shared<FilterOperator>(scan, And5);
+
+    exe::OperPtr group_by = std::make_shared<GroupByOperator>(
+        filter,
+        std::vector<AggregateType>{AggregateType::Count},
+        std::vector<exe::ExprPtr>{URL},
+        std::vector<exe::ExprPtr>{URL});
+
+    exe::ExprPtr c = std::make_shared<ColumnRef>("count_URL");
+    exe::OperPtr order_by_limit =
+        std::make_shared<OrderByLimitOperator>(group_by, c, 10 + 1000);
+
+    exe::OperPtr offset_op =
+        std::make_shared<OffsetOperator>(order_by_limit, 1000);
+
+    CsvWriter csv_w(&res_file);
+    csv_w.WriteBatch(*offset_op->Next());
 }
 void Execute39() {
     DLOG(INFO) << "39th que is not supported: CASE, AND filters and OFFSET";
 }
 void Execute40() {
-    DLOG(INFO) << "40th que is not supported: IN, AND filters and OFFSET";
+    DLOG(INFO) << "40th que";
+    exe::OperPtr scan = GetScanner({"URLHash",
+                                    "EventDate",
+                                    "CounterID",
+                                    "IsRefresh",
+                                    "TraficSourceID",
+                                    "RefererHash"});
+    exe::ExprPtr URLHash = std::make_shared<ColumnRef>("URLHash");
+    exe::ExprPtr EventDate = std::make_shared<ColumnRef>("EventDate");
+    exe::ExprPtr CounterID = std::make_shared<ColumnRef>("CounterID");
+    exe::ExprPtr IsRefresh = std::make_shared<ColumnRef>("IsRefresh");
+    exe::ExprPtr TraficSourceID = std::make_shared<ColumnRef>("TraficSourceID");
+    exe::ExprPtr RefererHash = std::make_shared<ColumnRef>("RefererHash");
+
+    exe::ExprPtr CounterID_62 = std::make_shared<BinaryCmp>(
+        CounterID,
+        CmpType::Eq,
+        std::make_shared<Literal<int32_t>>(62, Types::kInt32_t));
+
+    exe::ExprPtr EventDate_Geq = std::make_shared<BinaryCmp>(
+        EventDate,
+        CmpType::Geq,
+        std::make_shared<Literal<int32_t>>(DaysCount("2013-07-01"),
+                                           Types::kDate));
+
+    exe::ExprPtr EventDate_Leq = std::make_shared<BinaryCmp>(
+        EventDate,
+        CmpType::Leq,
+        std::make_shared<Literal<int32_t>>(DaysCount("2013-07-31"),
+                                           Types::kDate));
+
+    exe::ExprPtr IsRefresh_0 = std::make_shared<BinaryCmp>(
+        IsRefresh,
+        CmpType::Eq,
+        std::make_shared<Literal<int16_t>>(0, Types::kInt16_t));
+
+    exe::ExprPtr TraficSourceID_minus1 = std::make_shared<BinaryCmp>(
+        TraficSourceID,
+        CmpType::Eq,
+        std::make_shared<Literal<int16_t>>(-1, Types::kInt16_t));
+    exe::ExprPtr TraficSourceID_6 = std::make_shared<BinaryCmp>(
+        TraficSourceID,
+        CmpType::Eq,
+        std::make_shared<Literal<int16_t>>(6, Types::kInt16_t));
+    exe::ExprPtr TraficSourceID_In =
+        std::make_shared<BinaryFunc>(TraficSourceID_minus1,
+                                     FuncType::Or,
+                                     TraficSourceID_6);
+
+    exe::ExprPtr RefererHash_Eq = std::make_shared<BinaryCmp>(
+        RefererHash,
+        CmpType::Eq,
+        std::make_shared<Literal<int64_t>>(3594120000172545465LL,
+                                           Types::kInt64_t));
+
+    exe::ExprPtr And1 = std::make_shared<BinaryFunc>(CounterID_62,
+                                                     FuncType::And,
+                                                     EventDate_Geq);
+    exe::ExprPtr And2 =
+        std::make_shared<BinaryFunc>(And1, FuncType::And, EventDate_Leq);
+    exe::ExprPtr And3 =
+        std::make_shared<BinaryFunc>(And2, FuncType::And, IsRefresh_0);
+    exe::ExprPtr And4 =
+        std::make_shared<BinaryFunc>(And3, FuncType::And, TraficSourceID_In);
+    exe::ExprPtr And5 =
+        std::make_shared<BinaryFunc>(And4, FuncType::And, RefererHash_Eq);
+
+    exe::OperPtr filter = std::make_shared<FilterOperator>(scan, And5);
+
+    exe::OperPtr group_by = std::make_shared<GroupByOperator>(
+        filter,
+        std::vector<AggregateType>{AggregateType::Count},
+        std::vector<exe::ExprPtr>{URLHash},
+        std::vector<exe::ExprPtr>{URLHash, EventDate});
+
+    exe::ExprPtr c = std::make_shared<ColumnRef>("count_URLHash");
+    exe::OperPtr order_by_limit =
+        std::make_shared<OrderByLimitOperator>(group_by, c, 10 + 100);
+
+    exe::OperPtr offset_op =
+        std::make_shared<OffsetOperator>(order_by_limit, 100);
+
+    CsvWriter csv_w(&res_file);
+    csv_w.WriteBatch(*offset_op->Next());
 }
 void Execute41() {
-    DLOG(INFO) << "41st que is not supported: AND filters and OFFSET";
+    DLOG(INFO) << "41st que";
+    exe::OperPtr scan = GetScanner({"WindowClientWidth",
+                                    "WindowClientHeight",
+                                    "CounterID",
+                                    "EventDate",
+                                    "IsRefresh",
+                                    "DontCountHits",
+                                    "URLHash"});
+    exe::ExprPtr WindowClientWidth =
+        std::make_shared<ColumnRef>("WindowClientWidth");
+    exe::ExprPtr WindowClientHeight =
+        std::make_shared<ColumnRef>("WindowClientHeight");
+    exe::ExprPtr CounterID = std::make_shared<ColumnRef>("CounterID");
+    exe::ExprPtr EventDate = std::make_shared<ColumnRef>("EventDate");
+    exe::ExprPtr IsRefresh = std::make_shared<ColumnRef>("IsRefresh");
+    exe::ExprPtr DontCountHits = std::make_shared<ColumnRef>("DontCountHits");
+    exe::ExprPtr URLHash = std::make_shared<ColumnRef>("URLHash");
+
+    exe::ExprPtr CounterID_62 = std::make_shared<BinaryCmp>(
+        CounterID,
+        CmpType::Eq,
+        std::make_shared<Literal<int32_t>>(62, Types::kInt32_t));
+
+    exe::ExprPtr EventDate_Geq = std::make_shared<BinaryCmp>(
+        EventDate,
+        CmpType::Geq,
+        std::make_shared<Literal<int32_t>>(DaysCount("2013-07-01"),
+                                           Types::kDate));
+
+    exe::ExprPtr EventDate_Leq = std::make_shared<BinaryCmp>(
+        EventDate,
+        CmpType::Leq,
+        std::make_shared<Literal<int32_t>>(DaysCount("2013-07-31"),
+                                           Types::kDate));
+
+    exe::ExprPtr IsRefresh_0 = std::make_shared<BinaryCmp>(
+        IsRefresh,
+        CmpType::Eq,
+        std::make_shared<Literal<int16_t>>(0, Types::kInt16_t));
+
+    exe::ExprPtr DontCountHits_0 = std::make_shared<BinaryCmp>(
+        DontCountHits,
+        CmpType::Eq,
+        std::make_shared<Literal<int16_t>>(0, Types::kInt16_t));
+
+    exe::ExprPtr URLHash_Eq = std::make_shared<BinaryCmp>(
+        URLHash,
+        CmpType::Eq,
+        std::make_shared<Literal<int64_t>>(2868770270353813622LL,
+                                           Types::kInt64_t));
+
+    exe::ExprPtr And1 = std::make_shared<BinaryFunc>(CounterID_62,
+                                                     FuncType::And,
+                                                     EventDate_Geq);
+    exe::ExprPtr And2 =
+        std::make_shared<BinaryFunc>(And1, FuncType::And, EventDate_Leq);
+    exe::ExprPtr And3 =
+        std::make_shared<BinaryFunc>(And2, FuncType::And, IsRefresh_0);
+    exe::ExprPtr And4 =
+        std::make_shared<BinaryFunc>(And3, FuncType::And, DontCountHits_0);
+    exe::ExprPtr And5 =
+        std::make_shared<BinaryFunc>(And4, FuncType::And, URLHash_Eq);
+
+    exe::OperPtr filter = std::make_shared<FilterOperator>(scan, And5);
+
+    exe::OperPtr group_by = std::make_shared<GroupByOperator>(
+        filter,
+        std::vector<AggregateType>{AggregateType::Count},
+        std::vector<exe::ExprPtr>{WindowClientWidth},
+        std::vector<exe::ExprPtr>{WindowClientWidth, WindowClientHeight});
+
+    exe::ExprPtr c = std::make_shared<ColumnRef>("count_WindowClientWidth");
+    exe::OperPtr order_by_limit =
+        std::make_shared<OrderByLimitOperator>(group_by, c, 10 + 10000);
+
+    exe::OperPtr offset_op =
+        std::make_shared<OffsetOperator>(order_by_limit, 10000);
+
+    CsvWriter csv_w(&res_file);
+    csv_w.WriteBatch(*offset_op->Next());
 }
 void Execute42() {
-    DLOG(INFO)
-        << "42nd que is not supported: DATE_TRUNC, AND filters and OFFSET";
+    DLOG(INFO) << "42nd que";
+    exe::OperPtr scan = GetScanner(
+        {"EventTime", "CounterID", "EventDate", "IsRefresh", "DontCountHits"});
+    exe::ExprPtr EventTime = std::make_shared<ColumnRef>("EventTime");
+    exe::ExprPtr CounterID = std::make_shared<ColumnRef>("CounterID");
+    exe::ExprPtr EventDate = std::make_shared<ColumnRef>("EventDate");
+    exe::ExprPtr IsRefresh = std::make_shared<ColumnRef>("IsRefresh");
+    exe::ExprPtr DontCountHits = std::make_shared<ColumnRef>("DontCountHits");
+
+    exe::ExprPtr CounterID_62 = std::make_shared<BinaryCmp>(
+        CounterID,
+        CmpType::Eq,
+        std::make_shared<Literal<int32_t>>(62, Types::kInt32_t));
+
+    exe::ExprPtr EventDate_Geq = std::make_shared<BinaryCmp>(
+        EventDate,
+        CmpType::Geq,
+        std::make_shared<Literal<int32_t>>(DaysCount("2013-07-14"),
+                                           Types::kDate));
+
+    exe::ExprPtr EventDate_Leq = std::make_shared<BinaryCmp>(
+        EventDate,
+        CmpType::Leq,
+        std::make_shared<Literal<int32_t>>(DaysCount("2013-07-15"),
+                                           Types::kDate));
+
+    exe::ExprPtr IsRefresh_0 = std::make_shared<BinaryCmp>(
+        IsRefresh,
+        CmpType::Eq,
+        std::make_shared<Literal<int16_t>>(0, Types::kInt16_t));
+
+    exe::ExprPtr DontCountHits_0 = std::make_shared<BinaryCmp>(
+        DontCountHits,
+        CmpType::Eq,
+        std::make_shared<Literal<int16_t>>(0, Types::kInt16_t));
+
+    exe::ExprPtr And1 = std::make_shared<BinaryFunc>(CounterID_62,
+                                                     FuncType::And,
+                                                     EventDate_Geq);
+    exe::ExprPtr And2 =
+        std::make_shared<BinaryFunc>(And1, FuncType::And, EventDate_Leq);
+    exe::ExprPtr And3 =
+        std::make_shared<BinaryFunc>(And2, FuncType::And, IsRefresh_0);
+    exe::ExprPtr And4 =
+        std::make_shared<BinaryFunc>(And3, FuncType::And, DontCountHits_0);
+
+    exe::OperPtr filter = std::make_shared<FilterOperator>(scan, And4);
+
+    exe::ExprPtr TruncEventTime =
+        std::make_shared<TruncateTime>(EventTime, Trunc::KMinutes, "M");
+
+    exe::OperPtr group_by = std::make_shared<GroupByOperator>(
+        filter,
+        std::vector<AggregateType>{AggregateType::Count},
+        std::vector<exe::ExprPtr>{TruncEventTime},
+        std::vector<exe::ExprPtr>{TruncEventTime});
+
+    exe::ExprPtr TruncEvent = std::make_shared<ColumnRef>("M");
+
+    exe::OperPtr order_by_limit =
+        std::make_shared<OrderByLimitOperator>(group_by,
+                                               TruncEvent,
+                                               10 + 1000,
+                                               false);
+
+    exe::OperPtr offset_op =
+        std::make_shared<OffsetOperator>(order_by_limit, 1000);
+
+    CsvWriter csv_w(&res_file);
+    csv_w.WriteBatch(*offset_op->Next());
 }
 
 void my_handler() {  // gemini handler

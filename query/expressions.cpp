@@ -178,10 +178,6 @@ Column BinaryFunc::Evaluate(const Batch& b) {
                         a.emplace_back(ma_func(l.GetElementByIndex<type_l>(i),
                                                r.GetElementByIndex<type_r>(i)));
                     }
-                    DLOG(INFO)
-                        << "out: " << TypeToString(CppToEnum<type_out>::value)
-                        << ' ' << "L: " << TypeToString(L) << ' '
-                        << "R: " << TypeToString(R);
                     res = Column(std::move(a), CppToEnum<type_out>::value);
                 }
             });
@@ -262,5 +258,29 @@ Column ExtractFromTime::Evaluate(const Batch& b) {
 }
 
 std::string ExtractFromTime::GetName() const {
+    return name_;
+}
+
+TruncateTime::TruncateTime(std::shared_ptr<IExpression> child,
+                           Trunc trunc,
+                           const std::string& name)
+    : child_(child), trunc_(trunc), name_(name) {
+}
+
+Column TruncateTime::Evaluate(const Batch& b) {
+    Column c = child_->Evaluate(b);
+    if (c.GetType() != Types::kTimestamp) {
+        DLOG(ERROR) << "Cannot truncate non-timestamp type";
+    }
+    std::vector<int64_t> ts =
+        std::move(std::get<std::vector<int64_t>>(std::move(c.GetData())));
+    std::vector<int64_t> res(ts.size());
+    for (size_t i = 0; i < ts.size(); i++) {
+        res[i] = TruncateTimestamp(ts[i], trunc_);
+    }
+    return Column(std::move(res), Types::kTimestamp);
+}
+
+std::string TruncateTime::GetName() const {
     return name_;
 }

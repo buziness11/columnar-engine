@@ -79,4 +79,4 @@ std::string GetYyyyMmDdHhMmSs(int64_t seconds);
 
 enum class Trunc { KSeconds, KMinutes, KHours, KDays, KMonths, KYears };
 
-int32_t Truncate(int64_t seconds, Trunc trunc);
+int64_t TruncateTimestamp(int64_t seconds, Trunc trunc);

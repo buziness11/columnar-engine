@@ -6,6 +6,7 @@
 #include <format>
 #include <glog/logging.h>
 #include <string>
+#include "core/rwconsts.h"
 
 // В нашей таске нам неважно работать с чужими форматами
 // Нам важно поддерживать следующие операции
@@ -57,4 +58,21 @@ std::string GetYyyyMmDdHhMmSs(int64_t seconds) {
                        seconds / kSecondsPerHour,
                        (seconds % kSecondsPerHour) / kSecondsPerMinute,
                        seconds % kSecondsPerMinute);
+}
+
+int64_t TruncateTimestamp(int64_t seconds, Trunc trunc) {
+    switch (trunc) {
+        case Trunc::KSeconds:
+            return seconds;
+        case Trunc::KMinutes:
+            return seconds / kSecondsPerMinute * kSecondsPerMinute;
+        case Trunc::KHours:
+            return seconds / kSecondsPerHour * kSecondsPerHour;
+        case Trunc::KDays:
+            return seconds / kSecondsPerDay * kSecondsPerDay;
+        case Trunc::KMonths:
+            return seconds / kSecondsPerDay / 32 * kSecondsPerDay * 32;
+        case Trunc::KYears:
+            return seconds / kSecondsPerDay / 512 * kSecondsPerDay * 512;
+    }
 }
