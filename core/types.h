@@ -138,7 +138,7 @@ template <Types T, Types U>
     requires StringType<T>&& NumericType<U> &&
     (U != Types::kLongDouble) auto TranslateTtoU(const std::string& s) {
     using ToType = typename EnumToCpp<U>::Type;
-    ToType res;
+    ToType res{};
     std::from_chars(s.data(), s.data() + s.size(), res);
     return res;
 }
