@@ -16,16 +16,13 @@
 // 2. В году 512 дней
 
 int32_t DaysCount(const std::string& yyyy_mm_dd) {
-    int32_t year;
-    std::from_chars(yyyy_mm_dd.data(), yyyy_mm_dd.data() + 4, year);
+    int32_t year = GetYears(yyyy_mm_dd);
     year -= 1970;
 
-    int32_t month;
-    std::from_chars(yyyy_mm_dd.data() + 5, yyyy_mm_dd.data() + 7, month);
+    int32_t month = GetMonths(yyyy_mm_dd);
     month--;
 
-    int32_t day;
-    std::from_chars(yyyy_mm_dd.data() + 8, yyyy_mm_dd.data() + 10, day);
+    int32_t day = GetDays(yyyy_mm_dd);
     day--;
     day += year * 512;
     day += month * 32;

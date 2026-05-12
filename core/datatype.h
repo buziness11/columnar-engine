@@ -6,7 +6,7 @@
 #include "core/rwconsts.h"
 
 int32_t inline GetSeconds(const std::string& yyyy_mm_dd_hh_mm_ss) {
-    int32_t second;
+    int32_t second{};
     std::from_chars(yyyy_mm_dd_hh_mm_ss.data() + 17,
                     yyyy_mm_dd_hh_mm_ss.data() + 19,
                     second);
@@ -14,7 +14,7 @@ int32_t inline GetSeconds(const std::string& yyyy_mm_dd_hh_mm_ss) {
 }
 
 int32_t inline GetMinutes(const std::string& yyyy_mm_dd_hh_mm_ss) {
-    int32_t minute;
+    int32_t minute{};
     std::from_chars(yyyy_mm_dd_hh_mm_ss.data() + 14,
                     yyyy_mm_dd_hh_mm_ss.data() + 16,
                     minute);
@@ -22,7 +22,7 @@ int32_t inline GetMinutes(const std::string& yyyy_mm_dd_hh_mm_ss) {
 }
 
 int32_t inline GetHours(const std::string& yyyy_mm_dd_hh_mm_ss) {
-    int32_t hour;
+    int32_t hour{};
     std::from_chars(yyyy_mm_dd_hh_mm_ss.data() + 11,
                     yyyy_mm_dd_hh_mm_ss.data() + 13,
                     hour);
@@ -30,7 +30,7 @@ int32_t inline GetHours(const std::string& yyyy_mm_dd_hh_mm_ss) {
 }
 
 int32_t inline GetDays(const std::string& yyyy_mm_dd_hh_mm_ss) {
-    int32_t day;
+    int32_t day{};
     std::from_chars(yyyy_mm_dd_hh_mm_ss.data() + 8,
                     yyyy_mm_dd_hh_mm_ss.data() + 10,
                     day);
@@ -38,14 +38,14 @@ int32_t inline GetDays(const std::string& yyyy_mm_dd_hh_mm_ss) {
 }
 
 int32_t inline GetMonths(const std::string& yyyy_mm_dd_hh_mm_ss) {
-    int32_t month;
+    int32_t month{};
     std::from_chars(yyyy_mm_dd_hh_mm_ss.data() + 5,
                     yyyy_mm_dd_hh_mm_ss.data() + 7,
                     month);
     return month;
 }
 int32_t inline GetYears(const std::string& yyyy_mm_dd_hh_mm_ss) {
-    int32_t year;
+    int32_t year{};
     std::from_chars(yyyy_mm_dd_hh_mm_ss.data(),
                     yyyy_mm_dd_hh_mm_ss.data() + 4,
                     year);
