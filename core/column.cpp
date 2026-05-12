@@ -29,7 +29,7 @@ void Column::MergeWithOtherColumn(Column&& ot) {
 Column Column::GetElementByIndexAsColumn(size_t idx) {
     Column res;
     std::visit(Overloaded([this, &res, idx](auto&& x) {
-                   res = Column(std::move(std::decay_t<decltype(x)>(1, x[idx])),
+                   res = Column(std::move(std::decay_t<decltype(x)>{x[idx]}),
                                 type_);
                }),
                data_);
