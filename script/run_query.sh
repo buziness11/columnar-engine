@@ -1,1 +1,1 @@
-./build/exec/exec_queries ${QUERY_NUM} ${COLUMNAR} ${OUTPUT} ${LOGS}
+./build/exec/exec_queries $1 $2 $3 $4
