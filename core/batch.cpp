@@ -91,6 +91,11 @@ const Column& Batch::GetColumnByName(const std::string& s) const {
         }
     }
     DLOG(ERROR) << "Column named : " << s << " doesnt exists";
+    std::string ss;
+    for (auto& i : schema_.GetNames()) {
+        ss += "\'" + i + "\',";
+    }
+    DLOG(ERROR) << "Allowed names: " << ss;
     throw std::exception();
 }
 

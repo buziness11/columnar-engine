@@ -61,8 +61,8 @@ concept IntVector = requires(T v) {
     typename T::value_type;
     requires std::is_arithmetic_v<typename T::value_type>;
     requires std::is_same_v<typename T::value_type, int64_t> ||
-                 std::is_same_v<typename T::value_type, int32_t> ||
-                 std::is_same_v<typename T::value_type, int16_t>;
+        std::is_same_v<typename T::value_type, int32_t> ||
+        std::is_same_v<typename T::value_type, int16_t>;
     requires std::same_as<T, std::vector<typename T::value_type>>;
 };
 
@@ -71,7 +71,7 @@ concept DoubleVector = requires(T v) {
     typename T::value_type;
     requires std::is_arithmetic_v<typename T::value_type>;
     requires std::is_same_v<typename T::value_type, double> ||
-                 std::is_same_v<typename T::value_type, long double>;
+        std::is_same_v<typename T::value_type, long double>;
     requires std::same_as<T, std::vector<typename T::value_type>>;
 };
 
@@ -196,7 +196,6 @@ std::shared_ptr<IAggregateState> CountDistinctFunc::CreateState() {
 
 void CountDistinctFunc::Update(std::shared_ptr<IAggregateState> state,
                                const Column& col) {
-
     std::visit(
         Overloaded{[this, &state](auto&& v) {
             DispatchColumnHelper(type_, [&state, &v]<Types Dst>() {
@@ -243,11 +242,15 @@ MinFunc::MinFunc(Types type) : type_(type) {
 std::shared_ptr<IAggregateState> MinFunc::CreateState() {
     std::shared_ptr<IAggregateState> res;
     DispatchColumnHelper(type_, [&res]<Types Dst>() {
-        if constexpr (Dst == Types::kString || Dst == Types::kBool) {
-            DLOG(ERROR) << "Get min from string or type";
+        if constexpr (Dst == Types::kBool) {
+            DLOG(ERROR) << "Get min from bool";
             throw std::exception();
+        }
+        using cpptype = EnumToCpp<Dst>::Type;
+        if constexpr (Dst == Types::kString) {
+            res =
+                std::make_shared<MinState<std::string>>(std::string(8, '\xFF'));
         } else {
-            using cpptype = EnumToCpp<Dst>::Type;
             res = std::make_shared<MinState<cpptype>>(
                 std::numeric_limits<cpptype>::max());
         }
@@ -300,14 +303,14 @@ MaxFunc::MaxFunc(Types type) : type_(type) {
 std::shared_ptr<IAggregateState> MaxFunc::CreateState() {
     std::shared_ptr<IAggregateState> res;
     DispatchColumnHelper(type_, [&res]<Types Dst>() {
-        if constexpr (Dst == Types::kString || Dst == Types::kBool) {
-            DLOG(ERROR) << "Get max from string or type";
+        if constexpr (Dst == Types::kBool) {
+            DLOG(ERROR) << "Get max from bool";
             throw std::exception();
+        }
+        using cpptype = EnumToCpp<Dst>::Type;
+        if constexpr (Dst == Types::kString) {
+            res = std::make_shared<MinState<std::string>>(std::string(8, '\0'));
         } else {
-            using cpptype = EnumToCpp<Dst>::Type;
-            // Для floating-point numeric_limits::min() — это наименьшее
-            // положительное нормализованное значение, поэтому отрицательные
-            // числа в данных не будут учтены. Используем lowest().
             res = std::make_shared<MaxState<cpptype>>(
                 std::numeric_limits<cpptype>::lowest());
         }

@@ -107,7 +107,8 @@ AggregateType StringToAggregateType(const std::string& str) {
 }
 
 AggregateOperator::AggregateOperator(
-    std::shared_ptr<IOperator> child, std::vector<AggregateType> aggregations,
+    std::shared_ptr<IOperator> child,
+    std::vector<AggregateType> aggregations,
     std::vector<std::shared_ptr<IExpression>> expressions)
     : child_(child), aggregations_(aggregations), expressions_(expressions) {
     if (aggregations_.size() != expressions.size()) {
@@ -177,7 +178,8 @@ std::optional<Batch> AggregateOperator::Next() {
 }
 
 GroupByOperator::GroupByOperator(
-    std::shared_ptr<IOperator> child, std::vector<AggregateType> aggregations,
+    std::shared_ptr<IOperator> child,
+    std::vector<AggregateType> aggregations,
     std::vector<std::shared_ptr<IExpression>> expressions,
     std::vector<std::shared_ptr<IExpression>> keys)
     : child_(child),
@@ -299,10 +301,12 @@ std::optional<Batch> GroupByOperator::Next() {
         }
         res_keys = key_decoder(strs, keys_.size());
     }
-    out_key_types.insert(out_key_types.end(), out_types_agg.begin(),
+    out_key_types.insert(out_key_types.end(),
+                         out_types_agg.begin(),
                          out_types_agg.end());
     res_keys.insert(res_keys.end(), res_aggs.begin(), res_aggs.end());
-    out_names_keys.insert(out_names_keys.end(), out_names_agg.begin(),
+    out_names_keys.insert(out_names_keys.end(),
+                          out_names_agg.begin(),
                           out_names_agg.end());
     return Batch(Schema(out_names_keys, out_key_types), std::move(res_keys));
 }
@@ -320,7 +324,8 @@ public:
 };
 
 OrderByOperator::OrderByOperator(std::shared_ptr<IOperator> child,
-                                 std::shared_ptr<IExpression> keys, bool desc)
+                                 std::shared_ptr<IExpression> keys,
+                                 bool desc)
     : child_(std::move(child)), keys_(std::move(keys)), desc_(desc) {
 }
 
@@ -335,23 +340,26 @@ std::optional<Batch> OrderByOperator::Next() {
 
     while (nw) {
         order_cl = keys_->Evaluate(*nw);
-        DispatchColumnHelper(order_cl.GetType(), [&res_map_ptr, &nw,
-                                                  &order_cl]<Types Src>() {
-            using cpptype = typename EnumToCpp<Src>::Type;
-            std::shared_ptr<MultiMap<cpptype>> map_ptr =
-                dynamic_pointer_cast<MultiMap<cpptype>>(res_map_ptr);
-            for (size_t i = 0; i < order_cl.GetSize(); ++i) {
-                map_ptr->map4ik.insert(
-                    {order_cl.GetElementByIndex<cpptype>(i), nw->GetRow(i)});
-            }
-        });
+        DispatchColumnHelper(
+            order_cl.GetType(),
+            [&res_map_ptr, &nw, &order_cl]<Types Src>() {
+                using cpptype = typename EnumToCpp<Src>::Type;
+                std::shared_ptr<MultiMap<cpptype>> map_ptr =
+                    dynamic_pointer_cast<MultiMap<cpptype>>(res_map_ptr);
+                for (size_t i = 0; i < order_cl.GetSize(); ++i) {
+                    map_ptr->map4ik.insert(
+                        {order_cl.GetElementByIndex<cpptype>(i),
+                         nw->GetRow(i)});
+                }
+            });
 
         nw = child_->Next();
     }
     Batch res;
 
     DispatchColumnHelper(
-        order_cl.GetType(), [&res_map_ptr, &res, this]<Types Src>() {
+        order_cl.GetType(),
+        [&res_map_ptr, &res, this]<Types Src>() {
             using cpptype = typename EnumToCpp<Src>::Type;
             std::shared_ptr<MultiMap<cpptype>> map_ptr =
                 dynamic_pointer_cast<MultiMap<cpptype>>(res_map_ptr);
@@ -375,7 +383,8 @@ std::optional<Batch> OrderByOperator::Next() {
 
 OrderByLimitOperator::OrderByLimitOperator(std::shared_ptr<IOperator> child,
                                            std::shared_ptr<IExpression> keys,
-                                           size_t limit, bool desc)
+                                           size_t limit,
+                                           bool desc)
     : child_(std::move(child)),
       keys_(std::move(keys)),
       limit_(limit),
@@ -393,45 +402,48 @@ std::optional<Batch> OrderByLimitOperator::Next() {
 
     while (nw) {
         order_cl = keys_->Evaluate(*nw);
-        DispatchColumnHelper(order_cl.GetType(), [&res_map_ptr, &nw, &order_cl,
-                                                  this]<Types Src>() {
-            using cpptype = typename EnumToCpp<Src>::Type;
-            std::shared_ptr<MultiMap<cpptype>> map_ptr =
-                dynamic_pointer_cast<MultiMap<cpptype>>(res_map_ptr);
+        DispatchColumnHelper(
+            order_cl.GetType(),
+            [&res_map_ptr, &nw, &order_cl, this]<Types Src>() {
+                using cpptype = typename EnumToCpp<Src>::Type;
+                std::shared_ptr<MultiMap<cpptype>> map_ptr =
+                    dynamic_pointer_cast<MultiMap<cpptype>>(res_map_ptr);
 
-            for (size_t i = 0; i < order_cl.GetSize(); ++i) {
-                if (map_ptr->map4ik.size() < limit_) {
-                    map_ptr->map4ik.insert(
-                        {order_cl.GetElementByIndex<cpptype>(i),
-                         nw->GetRow(i)});
-                    continue;
-                }
-                cpptype key_nw = order_cl.GetElementByIndex<cpptype>(i);
-                if (desc_) {
-                    if (key_nw > map_ptr->map4ik.begin()->first) {
-                        map_ptr->map4ik.erase(map_ptr->map4ik.begin());
-                        map_ptr->map4ik.insert({key_nw, nw->GetRow(i)});
+                for (size_t i = 0; i < order_cl.GetSize(); ++i) {
+                    if (map_ptr->map4ik.size() < limit_) {
+                        map_ptr->map4ik.insert(
+                            {order_cl.GetElementByIndex<cpptype>(i),
+                             nw->GetRow(i)});
+                        continue;
                     }
-                } else {
-                    if (key_nw < map_ptr->map4ik.rbegin()->first) {
-                        map_ptr->map4ik.erase(std::prev(map_ptr->map4ik.end()));
-                        map_ptr->map4ik.insert({key_nw, nw->GetRow(i)});
+                    cpptype key_nw = order_cl.GetElementByIndex<cpptype>(i);
+                    if (desc_) {
+                        if (key_nw > map_ptr->map4ik.begin()->first) {
+                            map_ptr->map4ik.erase(map_ptr->map4ik.begin());
+                            map_ptr->map4ik.insert({key_nw, nw->GetRow(i)});
+                        }
+                    } else {
+                        if (key_nw < map_ptr->map4ik.rbegin()->first) {
+                            map_ptr->map4ik.erase(
+                                std::prev(map_ptr->map4ik.end()));
+                            map_ptr->map4ik.insert({key_nw, nw->GetRow(i)});
+                        }
                     }
                 }
-            }
-        });
+            });
         nw = child_->Next();
     }
     Batch res;
 
     DispatchColumnHelper(
-        order_cl.GetType(), [&res_map_ptr, &res, this]<Types Src>() {
+        order_cl.GetType(),
+        [&res_map_ptr, &res, this]<Types Src>() {
             using cpptype = typename EnumToCpp<Src>::Type;
             std::shared_ptr<MultiMap<cpptype>> map_ptr =
                 dynamic_pointer_cast<MultiMap<cpptype>>(res_map_ptr);
             Batch temp;
             auto fill_temp = [&temp](auto begin, auto end) {
-                temp = std::move(begin->second);
+                temp = std::move(begin->second);  // may fall if empty
                 ++begin;
                 for (; begin != end; ++begin) {
                     temp.MergeWithOtherBatch(std::move(begin->second));
@@ -452,10 +464,12 @@ LimitOperator::LimitOperator(std::shared_ptr<IOperator> child, size_t limit)
 }
 
 std::optional<Batch> LimitOperator::Next() {
-    std::optional<Batch> nw = child_->Next();
     size_t count = 0;
     Batch res;
-    while (nw && count < limit_) {
+    while (std::optional<Batch> nw = child_->Next()) {
+        if (count >= limit_) {
+            break;
+        }
         for (size_t i = 0; i < nw->GetColumnSize() && count < limit_;
              ++i, ++count) {
             if (count == 0) {
@@ -464,7 +478,26 @@ std::optional<Batch> LimitOperator::Next() {
                 res.MergeWithOtherBatch(nw->GetRow(i));
             }
         }
-        nw = child_->Next();
+    }
+    return res;
+}
+
+OffsetOperator::OffsetOperator(std::shared_ptr<IOperator> child, size_t offset)
+    : child_(std::move(child)), offset_(offset) {
+}
+
+std::optional<Batch> OffsetOperator::Next() {
+    size_t count = 0;
+    Batch res;
+    while (std::optional<Batch> nw = child_->Next()) {
+        for (size_t i = 0; i < nw->GetColumnSize() && count >= offset_;
+             ++i, ++count) {
+            if (count == offset_) {
+                res = nw->GetRow(i);
+            } else if (count > offset_) {
+                res.MergeWithOtherBatch(nw->GetRow(i));
+            }
+        }
     }
     return res;
 }

@@ -2,6 +2,8 @@
 
 #include "core/batch.h"
 #include "core/column.h"
+#include <cstdint>
+#include <functional>
 #include <memory>
 #include <string>
 
@@ -47,8 +49,10 @@ enum class CmpType { L, Leq, Eq, G, Geq, Neq };
 
 class BinaryCmp : public IExpression {
 public:
-    BinaryCmp(std::shared_ptr<IExpression> left, CmpType cmp_type,
-              std::shared_ptr<IExpression> right, const std::string& name = "");
+    BinaryCmp(std::shared_ptr<IExpression> left,
+              CmpType cmp_type,
+              std::shared_ptr<IExpression> right,
+              const std::string& name = "");
     ~BinaryCmp() override = default;
     Column Evaluate(const Batch&) override;
     std::string GetName() const override;
@@ -61,25 +65,34 @@ private:
 };
 
 enum class FuncType {
-    Sum,
+    Plus,
+    Minus,
+    And,
+    Or,
 };
 
 class BinaryFunc : public IExpression {
 public:
+    BinaryFunc(std::shared_ptr<IExpression> left,
+               FuncType bin_func_type,
+               std::shared_ptr<IExpression> right,
+               const std::string& name = "");
     ~BinaryFunc() override = default;
     Column Evaluate(const Batch&) override;
     std::string GetName() const override;
 
 private:
     std::shared_ptr<IExpression> left_;
-    FuncType bin_func_;
+    FuncType bin_func_type_;
     std::shared_ptr<IExpression> right_;
     std::string name_;
 };
 
 class Like : public IExpression {
 public:
-    Like(std::shared_ptr<IExpression>, const std::string& pattern,
+    Like(std::shared_ptr<IExpression>,
+         const std::string& pattern,
+         bool invert = false,
          const std::string& name = "");
     ~Like() override = default;
     Column Evaluate(const Batch&) override;
@@ -88,5 +101,32 @@ public:
 private:
     std::shared_ptr<IExpression> child_;
     std::string pattern_;
+    bool invert_ = false;
     std::string name_;
+};
+
+enum class TimeExtractType {
+    Year,
+    Month,
+    Day,
+    Hour,
+    Minute,
+    Second,
+};
+
+class ExtractFromTime : public IExpression {
+public:
+    ExtractFromTime(std::shared_ptr<IExpression>,
+                    // TimeExtractType time_extract_type,
+                    const std::string& name = "");
+    ~ExtractFromTime() override = default;
+    Column Evaluate(const Batch&) override;
+    std::string GetName() const override;
+
+private:
+    std::shared_ptr<IExpression> child_;
+    // TimeExtractType time_extract_type_;
+    std::string name_;
+    std::function<int32_t(int64_t)> extract_func_ =
+        static_cast<int32_t (*)(int64_t)>(GetMinutes);
 };

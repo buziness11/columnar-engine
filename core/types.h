@@ -65,6 +65,37 @@ struct EnumToCpp<Types::kBool> {
     using Type = bool;
 };
 
+template <typename T>
+struct CppToEnum;
+template <>
+struct CppToEnum<int16_t> {
+    static constexpr Types value = Types::kInt16_t;
+};
+template <>
+struct CppToEnum<int32_t> {
+    static constexpr Types value = Types::kInt32_t;
+};
+template <>
+struct CppToEnum<int64_t> {
+    static constexpr Types value = Types::kInt64_t;
+};
+template <>
+struct CppToEnum<std::string> {
+    static constexpr Types value = Types::kString;
+};
+template <>
+struct CppToEnum<double> {
+    static constexpr Types value = Types::kDouble;
+};
+template <>
+struct CppToEnum<long double> {
+    static constexpr Types value = Types::kLongDouble;
+};
+template <>
+struct CppToEnum<bool> {
+    static constexpr Types value = Types::kBool;
+};
+
 using ColumnType = std::variant<std::vector<int16_t>,
                                 std::vector<int32_t>,
                                 std::vector<int64_t>,

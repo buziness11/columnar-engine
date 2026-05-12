@@ -1,9 +1,14 @@
 #include "query/expressions.h"
 #include <cstddef>
+#include <cstdint>
 #include <exception>
+#include <functional>
 #include <string>
+#include <type_traits>
+#include <utility>
 #include <variant>
 #include "core/column.h"
+#include "core/datatype.h"
 #include "core/types.h"
 
 ColumnRef::ColumnRef(const std::string& name) : name_(name) {
@@ -17,7 +22,8 @@ std::string ColumnRef::GetName() const {
     return name_;
 }
 
-BinaryCmp::BinaryCmp(std::shared_ptr<IExpression> left, CmpType cmp_type,
+BinaryCmp::BinaryCmp(std::shared_ptr<IExpression> left,
+                     CmpType cmp_type,
                      std::shared_ptr<IExpression> right,
                      const std::string& name)
     : left_(left), cmp_type_(cmp_type), right_(right), name_(name) {
@@ -107,6 +113,7 @@ Column BinaryCmp::Evaluate(const Batch& b) {
                 r.GetData());
         }},
         l.GetData());
+
     return res;
 }
 
@@ -114,9 +121,84 @@ std::string BinaryCmp::GetName() const {
     return name_;
 }
 
-Like::Like(std::shared_ptr<IExpression> child, const std::string& pattern,
+BinaryFunc::BinaryFunc(std::shared_ptr<IExpression> left,
+                       FuncType bin_func_type,
+                       std::shared_ptr<IExpression> right,
+                       const std::string& name)
+    : left_(left), bin_func_type_(bin_func_type), right_(right), name_(name) {
+}
+
+Column BinaryFunc::Evaluate(const Batch& b) {
+    Column res;
+    Column l = left_->Evaluate(b);
+    Column r = right_->Evaluate(b);
+    DispatchColumnHelper(l.GetType(), [&l, &r, &res, this]<Types L>() {
+        if constexpr (L != Types::kString && L != Types::kTimestamp &&
+                      L != Types::kDate && L != Types::kLongDouble &&
+                      L != Types::kDouble) {
+            DispatchColumnHelper(r.GetType(), [&l, &r, &res, this]<Types R>() {
+                if constexpr (R != Types::kString && R != Types::kTimestamp &&
+                              R != Types::kDate && R != Types::kLongDouble &&
+                              R != Types::kDouble) {
+                    using type_l = typename EnumToCpp<L>::Type;
+                    using type_r = typename EnumToCpp<R>::Type;
+                    using type_out =
+                        std::conditional_t<std::is_same_v<type_l, type_r> &&
+                                               std::is_same_v<type_l, bool>,
+                                           bool,
+                                           decltype(std::declval<type_l>() +
+                                                    std::declval<type_r>())>;
+                    std::function<type_out(type_l, type_r)> ma_func;
+                    switch (bin_func_type_) {
+                        case FuncType::Plus:
+                            ma_func = [](type_l l, type_r r) {
+                                return static_cast<type_out>(l + r);
+                            };
+                            break;
+                        case FuncType::Minus:
+                            ma_func = [](type_l l, type_r r) {
+                                return static_cast<type_out>(l - r);
+                            };
+                            break;
+                        case FuncType::Or:
+                            ma_func = [](type_l l, type_r r) {
+                                return static_cast<type_out>(l | r);
+                            };
+                            break;
+                        case FuncType::And:
+                            ma_func = [](type_l l, type_r r) {
+                                return static_cast<type_out>(l & r);
+                            };
+                            break;
+                    }
+
+                    std::vector<type_out> a;
+                    a.reserve(l.GetSize());
+                    for (size_t i = 0; i < l.GetSize(); i++) {
+                        a.emplace_back(ma_func(l.GetElementByIndex<type_l>(i),
+                                               r.GetElementByIndex<type_r>(i)));
+                    }
+                    DLOG(INFO)
+                        << "out: " << TypeToString(CppToEnum<type_out>::value)
+                        << ' ' << "L: " << TypeToString(L) << ' '
+                        << "R: " << TypeToString(R);
+                    res = Column(std::move(a), CppToEnum<type_out>::value);
+                }
+            });
+        }
+    });
+    return res;
+}
+
+std::string BinaryFunc::GetName() const {
+    return name_;
+}
+
+Like::Like(std::shared_ptr<IExpression> child,
+           const std::string& pattern,
+           bool invert,
            const std::string& name)
-    : child_(child), pattern_(pattern), name_(name) {
+    : child_(child), pattern_(pattern), invert_(invert), name_(name) {
 }
 
 std::vector<int> prefix_function(const std::string& t) {
@@ -139,7 +221,7 @@ Column Like::Evaluate(const Batch& b) {
     Column c = child_->Evaluate(b);
     std::vector<std::string> strs =
         std::move(std::get<std::vector<std::string>>(std::move(c.GetData())));
-    std::vector<bool> res(strs.size());
+    std::vector<bool> res(strs.size(), false ^ invert_);
     std::vector<int> pref = prefix_function(pattern_);
     for (size_t i = 0; i < strs.size(); i++) {
         size_t k = 0;
@@ -150,7 +232,7 @@ Column Like::Evaluate(const Batch& b) {
             if (strs[i][j] == pattern_[k])
                 k++;
             if (k == pattern_.size()) {
-                res[i] = true;
+                res[i] = true ^ invert_;
                 break;
             }
         }
@@ -159,5 +241,26 @@ Column Like::Evaluate(const Batch& b) {
 }
 
 std::string Like::GetName() const {
+    return name_;
+}
+
+ExtractFromTime::ExtractFromTime(std::shared_ptr<IExpression> child,
+                                 //  TimeExtractType time_extract_type,
+                                 const std::string& name)
+    : child_(child), name_(name) {
+}
+
+Column ExtractFromTime::Evaluate(const Batch& b) {
+    Column c = child_->Evaluate(b);
+    std::vector<int64_t> ts =
+        std::move(std::get<std::vector<int64_t>>(std::move(c.GetData())));
+    std::vector<int32_t> res(ts.size());
+    for (size_t i = 0; i < ts.size(); i++) {
+        res[i] = extract_func_(ts[i]);
+    }
+    return Column(std::move(res), Types::kInt32_t);
+}
+
+std::string ExtractFromTime::GetName() const {
     return name_;
 }

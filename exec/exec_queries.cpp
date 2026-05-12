@@ -1,7 +1,11 @@
 #include <cstddef>
+#include <cstdlib>
+#include <exception>
 #include <functional>
 #include <string>
 #include "core/batch.h"
+#include "core/column.h"
+#include "core/schema.h"
 #include "io/csv-rw.h"
 #include "io/my-format.h"
 #include "query/operators.h"
@@ -68,9 +72,11 @@ void Execute2() {
         std::make_shared<ColumnRef>(ColumnRef("AdvEngineID"));
     exe::ExprPtr ResolutionWidth =
         std::make_shared<ColumnRef>(ColumnRef("ResolutionWidth"));
-    std::vector<AggregateType> aggs = {AggregateType::Sum, AggregateType::Count,
+    std::vector<AggregateType> aggs = {AggregateType::Sum,
+                                       AggregateType::Count,
                                        AggregateType::Avg};
-    std::vector<exe::ExprPtr> exprs = {AdvEngineID, AdvEngineID,
+    std::vector<exe::ExprPtr> exprs = {AdvEngineID,
+                                       AdvEngineID,
                                        ResolutionWidth};
     exe::OperPtr agg_op =
         std::make_shared<AggregateOperator>(scan, aggs, exprs);
@@ -118,7 +124,8 @@ void Execute6() {
     exe::ExprPtr EventDate =
         std::make_shared<ColumnRef>(ColumnRef("EventDate"));
     std::optional<Batch> res =
-        AggregateOperator(scan, {AggregateType::Min, AggregateType::Max},
+        AggregateOperator(scan,
+                          {AggregateType::Min, AggregateType::Max},
                           {EventDate, EventDate})
             .Next();
 
@@ -136,7 +143,8 @@ void Execute7() {
     exe::OperPtr filter = std::make_shared<FilterOperator>(scan, Cmp);
 
     exe::OperPtr group_by = std::make_shared<GroupByOperator>(
-        filter, std::vector<AggregateType>{AggregateType::Count},
+        filter,
+        std::vector<AggregateType>{AggregateType::Count},
         std::vector<exe::ExprPtr>{AdvEngineID},
         std::vector<exe::ExprPtr>{AdvEngineID});
 
@@ -157,8 +165,10 @@ void Execute8() {
     exe::ExprPtr UserID = std::make_shared<ColumnRef>("UserID");
 
     exe::OperPtr group_by = std::make_shared<GroupByOperator>(
-        scan, std::vector<AggregateType>{AggregateType::CountDistinct},
-        std::vector<exe::ExprPtr>{UserID}, std::vector<exe::ExprPtr>{RegionID});
+        scan,
+        std::vector<AggregateType>{AggregateType::CountDistinct},
+        std::vector<exe::ExprPtr>{UserID},
+        std::vector<exe::ExprPtr>{RegionID});
 
     exe::ExprPtr u = std::make_shared<ColumnRef>("count_distinct_UserID");
     exe::OperPtr order_by_limit =
@@ -179,10 +189,13 @@ void Execute9() {
 
     exe::OperPtr group_by = std::make_shared<GroupByOperator>(
         scan,
-        std::vector<AggregateType>{AggregateType::Sum, AggregateType::Count,
+        std::vector<AggregateType>{AggregateType::Sum,
+                                   AggregateType::Count,
                                    AggregateType::Avg,
                                    AggregateType::CountDistinct},
-        std::vector<exe::ExprPtr>{AdvEngineID, RegionID, ResolutionWidth,
+        std::vector<exe::ExprPtr>{AdvEngineID,
+                                  RegionID,
+                                  ResolutionWidth,
                                   UserID},
         std::vector<exe::ExprPtr>{RegionID});
 
@@ -203,11 +216,13 @@ void Execute10() {
     exe::ExprPtr EmptyLiteral =
         std::make_shared<Literal<std::string>>("", Types::kString);
     exe::ExprPtr Cmp = std::make_shared<BinaryCmp>(MobilePhoneModel,
-                                                   CmpType::Neq, EmptyLiteral);
+                                                   CmpType::Neq,
+                                                   EmptyLiteral);
     exe::OperPtr filter = std::make_shared<FilterOperator>(scan, Cmp);
 
     exe::OperPtr group_by = std::make_shared<GroupByOperator>(
-        filter, std::vector<AggregateType>{AggregateType::CountDistinct},
+        filter,
+        std::vector<AggregateType>{AggregateType::CountDistinct},
         std::vector<exe::ExprPtr>{UserID},
         std::vector<exe::ExprPtr>{MobilePhoneModel});
 
@@ -229,11 +244,13 @@ void Execute11() {
     exe::ExprPtr EmptyLiteral =
         std::make_shared<Literal<std::string>>("", Types::kString);
     exe::ExprPtr Cmp = std::make_shared<BinaryCmp>(MobilePhoneModel,
-                                                   CmpType::Neq, EmptyLiteral);
+                                                   CmpType::Neq,
+                                                   EmptyLiteral);
     exe::OperPtr filter = std::make_shared<FilterOperator>(scan, Cmp);
 
     exe::OperPtr group_by = std::make_shared<GroupByOperator>(
-        filter, std::vector<AggregateType>{AggregateType::CountDistinct},
+        filter,
+        std::vector<AggregateType>{AggregateType::CountDistinct},
         std::vector<exe::ExprPtr>{UserID},
         std::vector<exe::ExprPtr>{MobilePhone, MobilePhoneModel});
 
@@ -256,7 +273,8 @@ void Execute12() {
     exe::OperPtr filter = std::make_shared<FilterOperator>(scan, Cmp);
 
     exe::OperPtr group_by = std::make_shared<GroupByOperator>(
-        filter, std::vector<AggregateType>{AggregateType::Count},
+        filter,
+        std::vector<AggregateType>{AggregateType::Count},
         std::vector<exe::ExprPtr>{SearchPhrase},
         std::vector<exe::ExprPtr>{SearchPhrase});
 
@@ -279,7 +297,8 @@ void Execute13() {
     exe::OperPtr filter = std::make_shared<FilterOperator>(scan, Cmp);
 
     exe::OperPtr group_by = std::make_shared<GroupByOperator>(
-        filter, std::vector<AggregateType>{AggregateType::CountDistinct},
+        filter,
+        std::vector<AggregateType>{AggregateType::CountDistinct},
         std::vector<exe::ExprPtr>{UserID},
         std::vector<exe::ExprPtr>{SearchPhrase});
 
@@ -303,7 +322,8 @@ void Execute14() {
     exe::OperPtr filter = std::make_shared<FilterOperator>(scan, Cmp);
 
     exe::OperPtr group_by = std::make_shared<GroupByOperator>(
-        filter, std::vector<AggregateType>{AggregateType::Count},
+        filter,
+        std::vector<AggregateType>{AggregateType::Count},
         std::vector<exe::ExprPtr>{SearchPhrase},
         std::vector<exe::ExprPtr>{SearchEngineID, SearchPhrase});
 
@@ -320,8 +340,10 @@ void Execute15() {
     exe::ExprPtr UserID = std::make_shared<ColumnRef>("UserID");
 
     exe::OperPtr group_by = std::make_shared<GroupByOperator>(
-        scan, std::vector<AggregateType>{AggregateType::Count},
-        std::vector<exe::ExprPtr>{UserID}, std::vector<exe::ExprPtr>{UserID});
+        scan,
+        std::vector<AggregateType>{AggregateType::Count},
+        std::vector<exe::ExprPtr>{UserID},
+        std::vector<exe::ExprPtr>{UserID});
 
     exe::ExprPtr c = std::make_shared<ColumnRef>("count_UserID");
     exe::OperPtr order_by_limit =
@@ -338,7 +360,8 @@ void Execute16() {
     exe::ExprPtr SearchPhrase = std::make_shared<ColumnRef>("SearchPhrase");
 
     exe::OperPtr group_by = std::make_shared<GroupByOperator>(
-        scan, std::vector<AggregateType>{AggregateType::Count},
+        scan,
+        std::vector<AggregateType>{AggregateType::Count},
         std::vector<exe::ExprPtr>{UserID},
         std::vector<exe::ExprPtr>{UserID, SearchPhrase});
 
@@ -356,7 +379,8 @@ void Execute17() {
     exe::ExprPtr SearchPhrase = std::make_shared<ColumnRef>("SearchPhrase");
 
     exe::OperPtr group_by = std::make_shared<GroupByOperator>(
-        scan, std::vector<AggregateType>{AggregateType::Count},
+        scan,
+        std::vector<AggregateType>{AggregateType::Count},
         std::vector<exe::ExprPtr>{UserID},
         std::vector<exe::ExprPtr>{UserID, SearchPhrase});
 
@@ -367,15 +391,37 @@ void Execute17() {
     csv_w.WriteBatch(*limit->Next());
 }
 
+// SELECT UserID, extract(minute FROM EventTime) AS m, SearchPhrase, COUNT(*)
+// FROM hits GROUP BY UserID, m, SearchPhrase ORDER BY COUNT(*) DESC LIMIT 10;
 void Execute18() {
-    DLOG(INFO) << "18th que is not supported: extract(minute FROM EventTime)";
+    DLOG(INFO) << "18th que";
+    exe::OperPtr scan = GetScanner({"UserID", "EventTime", "SearchPhrase"});
+    exe::ExprPtr UserID = std::make_shared<ColumnRef>("UserID");
+    exe::ExprPtr EventTime = std::make_shared<ColumnRef>("EventTime");
+    exe::ExprPtr SearchPhrase = std::make_shared<ColumnRef>("SearchPhrase");
+
+    exe::ExprPtr m = std::make_shared<ExtractFromTime>(EventTime, "m");
+
+    exe::OperPtr group_by = std::make_shared<GroupByOperator>(
+        scan,
+        std::vector<AggregateType>{AggregateType::Count},
+        std::vector<exe::ExprPtr>{UserID},
+        std::vector<exe::ExprPtr>{UserID, m, SearchPhrase});
+
+    exe::ExprPtr c = std::make_shared<ColumnRef>("count_UserID");
+    exe::OperPtr order_by_limit =
+        std::make_shared<OrderByLimitOperator>(group_by, c, 10);
+
+    CsvWriter csv_w(&res_file);
+    csv_w.WriteBatch(*order_by_limit->Next());
 }
 void Execute19() {
     DLOG(INFO) << "19th que";
     exe::OperPtr scan = GetScanner({"UserID"});
     exe::ExprPtr UserID = std::make_shared<ColumnRef>("UserID");
-    exe::ExprPtr UserIDLiteral = std::make_shared<Literal<int64_t>>(
-        435090932899640449LL, Types::kInt64_t);
+    exe::ExprPtr UserIDLiteral =
+        std::make_shared<Literal<int64_t>>(435090932899640449LL,
+                                           Types::kInt64_t);
     exe::ExprPtr Cmp =
         std::make_shared<BinaryCmp>(UserID, CmpType::Eq, UserIDLiteral);
     exe::OperPtr filter = std::make_shared<FilterOperator>(scan, Cmp);
@@ -397,13 +443,88 @@ void Execute20() {
     CsvWriter csv_w(&res_file);
     csv_w.WriteBatch(*count->Next());
 }
+
+// SELECT SearchPhrase, MIN(URL), COUNT(*) AS c FROM hits WHERE URL LIKE
+// '%google%' AND SearchPhrase <> '' GROUP BY SearchPhrase ORDER BY c DESC LIMIT
+// 10;
 void Execute21() {
-    DLOG(INFO) << "21st que is not supported: AND and MIN(string)";
+    DLOG(INFO) << "21st que";
+    exe::OperPtr scan = GetScanner({"SearchPhrase", "URL"});
+    exe::ExprPtr URL = std::make_shared<ColumnRef>("URL");
+    exe::ExprPtr SearchPhrase = std::make_shared<ColumnRef>("SearchPhrase");
+
+    exe::ExprPtr LikeExpr = std::make_shared<Like>(URL, "google");
+    exe::ExprPtr EmptyLiteral =
+        std::make_shared<Literal<std::string>>("", Types::kString);
+    exe::ExprPtr NeqEmpty =
+        std::make_shared<BinaryCmp>(SearchPhrase, CmpType::Neq, EmptyLiteral);
+    exe::ExprPtr And =
+        std::make_shared<BinaryFunc>(LikeExpr, FuncType::And, NeqEmpty);
+    exe::OperPtr filter = std::make_shared<FilterOperator>(scan, And);
+
+    exe::OperPtr group_by = std::make_shared<GroupByOperator>(
+        GroupByOperator(filter,
+                        {AggregateType::Min, AggregateType::Count},
+                        {
+                            URL,
+                            SearchPhrase,
+                        },
+                        {SearchPhrase}));
+
+    exe::ExprPtr count_SearchPhrase =
+        std::make_shared<ColumnRef>("count_SearchPhrase");
+    exe::OperPtr order_by_limit =
+        std::make_shared<OrderByLimitOperator>(group_by, SearchPhrase, 10);
+
+    CsvWriter csv_w(&res_file);
+    csv_w.WriteBatch(*order_by_limit->Next());
 }
 
+// SELECT SearchPhrase, MIN(URL), MIN(Title), COUNT(*) AS c, COUNT(DISTINCT
+// UserID) FROM hits WHERE Title LIKE '%Google%' AND URL NOT LIKE '%.google.%'
+// AND SearchPhrase <> '' GROUP BY SearchPhrase ORDER BY c DESC LIMIT 10;
 void Execute22() {
-    DLOG(INFO) << "22nd que is not supported: AND, NOT LIKE and MIN(string)";
+    DLOG(INFO) << "22nd que";
+    exe::OperPtr scan = GetScanner({"SearchPhrase", "URL", "Title", "UserID"});
+    exe::ExprPtr SearchPhrase = std::make_shared<ColumnRef>("SearchPhrase");
+    exe::ExprPtr URL = std::make_shared<ColumnRef>("URL");
+    exe::ExprPtr Title = std::make_shared<ColumnRef>("Title");
+    exe::ExprPtr UserID = std::make_shared<ColumnRef>("UserID");
+
+    exe::ExprPtr TitleLike = std::make_shared<Like>(Title, "Google");
+    exe::ExprPtr UrlNotLike = std::make_shared<Like>(URL, ".google.", true);
+    exe::ExprPtr EmptyLiteral =
+        std::make_shared<Literal<std::string>>("", Types::kString);
+    exe::ExprPtr SearchPhraseNotEmpty =
+        std::make_shared<BinaryCmp>(SearchPhrase, CmpType::Neq, EmptyLiteral);
+
+    exe::ExprPtr TitleAndUrl =
+        std::make_shared<BinaryFunc>(TitleLike, FuncType::And, UrlNotLike);
+    exe::ExprPtr Predicate = std::make_shared<BinaryFunc>(TitleAndUrl,
+                                                          FuncType::And,
+                                                          SearchPhraseNotEmpty);
+    exe::OperPtr filter = std::make_shared<FilterOperator>(scan, Predicate);
+
+    exe::OperPtr group_by = std::make_shared<GroupByOperator>(
+        filter,
+        std::vector<AggregateType>{AggregateType::Min,
+                                   AggregateType::Min,
+                                   AggregateType::Count,
+                                   AggregateType::CountDistinct},
+        std::vector<exe::ExprPtr>{URL, Title, SearchPhrase, UserID},
+        std::vector<exe::ExprPtr>{SearchPhrase});
+
+    exe::ExprPtr count_SearchPhrase =
+        std::make_shared<ColumnRef>("count_SearchPhrase");
+    exe::OperPtr order_by_limit =
+        std::make_shared<OrderByLimitOperator>(group_by,
+                                               count_SearchPhrase,
+                                               10);
+
+    CsvWriter csv_w(&res_file);
+    csv_w.WriteBatch(*order_by_limit->Next());
 }
+
 void Execute23() {
     DLOG(INFO) << "23rd que";
     exe::OperPtr scan = GetScanner({});
@@ -418,14 +539,11 @@ void Execute23() {
     csv_w.WriteBatch(*order_by_limit->Next());
 }
 
+// SELECT SearchPhrase FROM hits WHERE SearchPhrase <> '' ORDER BY EventTime
+// LIMIT 10;
 void Execute24() {
-    DLOG(INFO) << "24th que is not supported: projection after ORDER BY";
-}
-
-// add non desc order, add out operator
-void Execute25() {
-    DLOG(INFO) << "25th que";
-    exe::OperPtr scan = GetScanner({"SearchPhrase", "EventTime"});
+    DLOG(INFO) << "24th que";
+    exe::OperPtr scan = GetScanner({"EventTime", "SearchPhrase"});
     exe::ExprPtr SearchPhrase = std::make_shared<ColumnRef>("SearchPhrase");
     exe::ExprPtr EventTime = std::make_shared<ColumnRef>("EventTime");
     exe::ExprPtr EmptyLiteral =
@@ -435,6 +553,23 @@ void Execute25() {
     exe::OperPtr filter = std::make_shared<FilterOperator>(scan, Cmp);
     exe::OperPtr order_by_limit =
         std::make_shared<OrderByLimitOperator>(filter, EventTime, 10, false);
+
+    CsvWriter csv_w(&res_file);
+    csv_w.WriteBatch(*order_by_limit->Next());
+}
+
+// add non desc order, add out operator
+void Execute25() {
+    DLOG(INFO) << "25th que";
+    exe::OperPtr scan = GetScanner({"SearchPhrase"});
+    exe::ExprPtr SearchPhrase = std::make_shared<ColumnRef>("SearchPhrase");
+    exe::ExprPtr EmptyLiteral =
+        std::make_shared<Literal<std::string>>("", Types::kString);
+    exe::ExprPtr Cmp =
+        std::make_shared<BinaryCmp>(SearchPhrase, CmpType::Neq, EmptyLiteral);
+    exe::OperPtr filter = std::make_shared<FilterOperator>(scan, Cmp);
+    exe::OperPtr order_by_limit =
+        std::make_shared<OrderByLimitOperator>(filter, SearchPhrase, 10, false);
 
     CsvWriter csv_w(&res_file);
     csv_w.WriteBatch(*order_by_limit->Next());
@@ -450,13 +585,38 @@ void Execute28() {
         << "28th que is not supported: REGEXP_REPLACE, length() and HAVING";
 }
 void Execute29() {
-    DLOG(INFO) << "29th que is not supported: arithmetic expressions";
+    DLOG(INFO) << "29th que";
+    exe::OperPtr scan = GetScanner({"ResolutionWidth"});
+    exe::ExprPtr ResolutionWidth =
+        std::make_shared<ColumnRef>("ResolutionWidth");
+
+    std::vector<AggregateType> aggs(90, AggregateType::Sum);
+    std::vector<exe::ExprPtr> exprs;
+    exprs.reserve(90);
+    exprs.emplace_back(ResolutionWidth);
+    for (int16_t i = 1; i < 90; ++i) {
+        exprs.emplace_back(std::make_shared<BinaryFunc>(
+            ResolutionWidth,
+            FuncType::Plus,
+            std::make_shared<Literal<int16_t>>(i,
+                                               Types::kInt16_t,
+                                               std::to_string(i)),
+            "ResolutionWidth_plus_" + std::to_string(i)));
+    }
+
+    exe::OperPtr agg_op =
+        std::make_shared<AggregateOperator>(scan, aggs, exprs);
+
+    CsvWriter csv_w(&res_file);
+    csv_w.WriteBatch(*(agg_op->Next()));
 }
 void Execute30() {
     DLOG(INFO) << "30th que";
-    exe::OperPtr scan =
-        GetScanner({"SearchEngineID", "ClientIP", "SearchPhrase", "IsRefresh",
-                    "ResolutionWidth"});
+    exe::OperPtr scan = GetScanner({"SearchEngineID",
+                                    "ClientIP",
+                                    "SearchPhrase",
+                                    "IsRefresh",
+                                    "ResolutionWidth"});
     exe::ExprPtr SearchEngineID = std::make_shared<ColumnRef>("SearchEngineID");
     exe::ExprPtr ClientIP = std::make_shared<ColumnRef>("ClientIP");
     exe::ExprPtr SearchPhrase = std::make_shared<ColumnRef>("SearchPhrase");
@@ -471,7 +631,8 @@ void Execute30() {
 
     exe::OperPtr group_by = std::make_shared<GroupByOperator>(
         filter,
-        std::vector<AggregateType>{AggregateType::Count, AggregateType::Sum,
+        std::vector<AggregateType>{AggregateType::Count,
+                                   AggregateType::Sum,
                                    AggregateType::Avg},
         std::vector<exe::ExprPtr>{SearchPhrase, IsRefresh, ResolutionWidth},
         std::vector<exe::ExprPtr>{SearchEngineID, ClientIP});
@@ -485,8 +646,11 @@ void Execute30() {
 }
 void Execute31() {
     DLOG(INFO) << "31st que";
-    exe::OperPtr scan = GetScanner({"WatchID", "ClientIP", "SearchPhrase",
-                                    "IsRefresh", "ResolutionWidth"});
+    exe::OperPtr scan = GetScanner({"WatchID",
+                                    "ClientIP",
+                                    "SearchPhrase",
+                                    "IsRefresh",
+                                    "ResolutionWidth"});
     exe::ExprPtr WatchID = std::make_shared<ColumnRef>("WatchID");
     exe::ExprPtr ClientIP = std::make_shared<ColumnRef>("ClientIP");
     exe::ExprPtr SearchPhrase = std::make_shared<ColumnRef>("SearchPhrase");
@@ -501,7 +665,8 @@ void Execute31() {
 
     exe::OperPtr group_by = std::make_shared<GroupByOperator>(
         filter,
-        std::vector<AggregateType>{AggregateType::Count, AggregateType::Sum,
+        std::vector<AggregateType>{AggregateType::Count,
+                                   AggregateType::Sum,
                                    AggregateType::Avg},
         std::vector<exe::ExprPtr>{SearchPhrase, IsRefresh, ResolutionWidth},
         std::vector<exe::ExprPtr>{WatchID, ClientIP});
@@ -525,7 +690,8 @@ void Execute32() {
 
     exe::OperPtr group_by = std::make_shared<GroupByOperator>(
         scan,
-        std::vector<AggregateType>{AggregateType::Count, AggregateType::Sum,
+        std::vector<AggregateType>{AggregateType::Count,
+                                   AggregateType::Sum,
                                    AggregateType::Avg},
         std::vector<exe::ExprPtr>{WatchID, IsRefresh, ResolutionWidth},
         std::vector<exe::ExprPtr>{WatchID, ClientIP});
@@ -543,8 +709,10 @@ void Execute33() {
     exe::ExprPtr URL = std::make_shared<ColumnRef>("URL");
 
     exe::OperPtr group_by = std::make_shared<GroupByOperator>(
-        scan, std::vector<AggregateType>{AggregateType::Count},
-        std::vector<exe::ExprPtr>{URL}, std::vector<exe::ExprPtr>{URL});
+        scan,
+        std::vector<AggregateType>{AggregateType::Count},
+        std::vector<exe::ExprPtr>{URL},
+        std::vector<exe::ExprPtr>{URL});
 
     exe::ExprPtr c = std::make_shared<ColumnRef>("count_URL");
     exe::OperPtr order_by_limit =
@@ -561,8 +729,10 @@ void Execute34() {
     exe::ExprPtr URL = std::make_shared<ColumnRef>("URL");
 
     exe::OperPtr group_by = std::make_shared<GroupByOperator>(
-        scan, std::vector<AggregateType>{AggregateType::Count},
-        std::vector<exe::ExprPtr>{URL}, std::vector<exe::ExprPtr>{One, URL});
+        scan,
+        std::vector<AggregateType>{AggregateType::Count},
+        std::vector<exe::ExprPtr>{URL},
+        std::vector<exe::ExprPtr>{One, URL});
 
     exe::ExprPtr c = std::make_shared<ColumnRef>("count_URL");
     exe::OperPtr order_by_limit =
@@ -571,15 +741,195 @@ void Execute34() {
     CsvWriter csv_w(&res_file);
     csv_w.WriteBatch(*order_by_limit->Next());
 }
+
+// SELECT ClientIP, ClientIP - 1, ClientIP - 2, ClientIP - 3, COUNT(*) AS c FROM
+// hits GROUP BY ClientIP, ClientIP - 1, ClientIP - 2, ClientIP - 3 ORDER BY c
+// DESC LIMIT 10;
 void Execute35() {
-    DLOG(INFO) << "35th que is not supported: arithmetic expressions in "
-                  "SELECT/GROUP BY";
+    DLOG(INFO) << "35th que";
+    exe::OperPtr scan = GetScanner({"ClientIP"});
+    exe::ExprPtr ClientIP = std::make_shared<ColumnRef>("ClientIP");
+
+    exe::ExprPtr ClientIP_minus_1 = std::make_shared<BinaryFunc>(
+        ClientIP,
+        FuncType::Minus,
+        std::make_shared<Literal<int32_t>>(1, Types::kInt32_t, "1"),
+        "ClientIP_minus_1");
+    exe::ExprPtr ClientIP_minus_2 = std::make_shared<BinaryFunc>(
+        ClientIP,
+        FuncType::Minus,
+        std::make_shared<Literal<int32_t>>(2, Types::kInt32_t, "2"),
+        "ClientIP_minus_2");
+    exe::ExprPtr ClientIP_minus_3 = std::make_shared<BinaryFunc>(
+        ClientIP,
+        FuncType::Minus,
+        std::make_shared<Literal<int32_t>>(3, Types::kInt32_t, "3"),
+        "ClientIP_minus_3");
+
+    exe::OperPtr group_by = std::make_shared<GroupByOperator>(
+        scan,
+        std::vector<AggregateType>{AggregateType::Count},
+        std::vector<exe::ExprPtr>{ClientIP},
+        std::vector<exe::ExprPtr>{ClientIP,
+                                  ClientIP_minus_1,
+                                  ClientIP_minus_2,
+                                  ClientIP_minus_3});
+
+    exe::ExprPtr c = std::make_shared<ColumnRef>("count_ClientIP");
+    exe::OperPtr order_by_limit =
+        std::make_shared<OrderByLimitOperator>(group_by, c, 10);
+
+    CsvWriter csv_w(&res_file);
+    csv_w.WriteBatch(*order_by_limit->Next());
 }
+
+// SELECT URL, COUNT(*) AS PageViews FROM hits WHERE CounterID = 62 AND
+// EventDate >= '2013-07-01' AND EventDate <= '2013-07-31' AND DontCountHits = 0
+// AND IsRefresh = 0 AND URL <> '' GROUP BY URL ORDER BY PageViews DESC LIMIT
+// 10;
 void Execute36() {
-    DLOG(INFO) << "36th que is not supported: AND filters";
+    DLOG(INFO) << "36th que";
+    exe::OperPtr scan = GetScanner(
+        {"URL", "CounterID", "EventDate", "DontCountHits", "IsRefresh"});
+    exe::ExprPtr URL = std::make_shared<ColumnRef>("URL");
+    exe::ExprPtr CounterID = std::make_shared<ColumnRef>("CounterID");
+    exe::ExprPtr EventDate = std::make_shared<ColumnRef>("EventDate");
+    exe::ExprPtr DontCountHits = std::make_shared<ColumnRef>("DontCountHits");
+    exe::ExprPtr IsRefresh = std::make_shared<ColumnRef>("IsRefresh");
+
+    exe::ExprPtr CounterID_62 = std::make_shared<BinaryCmp>(
+        CounterID,
+        CmpType::Eq,
+        std::make_shared<Literal<int32_t>>(62, Types::kInt32_t));
+
+    exe::ExprPtr EventDate_Geq = std::make_shared<BinaryCmp>(
+        EventDate,
+        CmpType::Geq,
+        std::make_shared<Literal<int32_t>>(DaysCount("2013-07-01"),
+                                           Types::kDate),
+        "EventDate_Geq");
+
+    exe::ExprPtr EventDate_Leq = std::make_shared<BinaryCmp>(
+        EventDate,
+        CmpType::Leq,
+        std::make_shared<Literal<int32_t>>(DaysCount("2013-07-31"),
+                                           Types::kDate));
+
+    exe::ExprPtr DontCountHits_0 = std::make_shared<BinaryCmp>(
+        DontCountHits,
+        CmpType::Eq,
+        std::make_shared<Literal<int16_t>>(0, Types::kInt16_t));
+
+    exe::ExprPtr IsRefresh_0 = std::make_shared<BinaryCmp>(
+        IsRefresh,
+        CmpType::Eq,
+        std::make_shared<Literal<int16_t>>(0, Types::kInt16_t));
+
+    exe::ExprPtr URL_Neq = std::make_shared<BinaryCmp>(
+        URL,
+        CmpType::Neq,
+        std::make_shared<Literal<std::string>>("", Types::kString));
+
+    exe::ExprPtr And1 = std::make_shared<BinaryFunc>(CounterID_62,
+                                                     FuncType::And,
+                                                     EventDate_Geq);
+    exe::ExprPtr And2 =
+        std::make_shared<BinaryFunc>(And1, FuncType::And, EventDate_Leq);
+    exe::ExprPtr And3 =
+        std::make_shared<BinaryFunc>(And2, FuncType::And, DontCountHits_0);
+    exe::ExprPtr And4 =
+        std::make_shared<BinaryFunc>(And3, FuncType::And, IsRefresh_0);
+    exe::ExprPtr And5 =
+        std::make_shared<BinaryFunc>(And4, FuncType::And, URL_Neq);
+
+    exe::OperPtr filter = std::make_shared<FilterOperator>(scan, And5);
+
+    exe::OperPtr group_by = std::make_shared<GroupByOperator>(
+        filter,
+        std::vector<AggregateType>{AggregateType::Count},
+        std::vector<exe::ExprPtr>{URL},
+        std::vector<exe::ExprPtr>{URL});
+
+    exe::ExprPtr c = std::make_shared<ColumnRef>("count_URL");
+    exe::OperPtr order_by_limit =
+        std::make_shared<OrderByLimitOperator>(group_by, c, 10);
+
+    CsvWriter csv_w(&res_file);
+    csv_w.WriteBatch(*order_by_limit->Next());
 }
+
+// SELECT Title, COUNT(*) AS PageViews FROM hits WHERE CounterID = 62 AND
+// EventDate >= '2013-07-01' AND EventDate <= '2013-07-31' AND DontCountHits = 0
+// AND IsRefresh = 0 AND Title <> '' GROUP BY Title ORDER BY PageViews DESC
+// LIMIT 10;
 void Execute37() {
-    DLOG(INFO) << "37th que is not supported: AND filters";
+    DLOG(INFO) << "37th que";
+    exe::OperPtr scan = GetScanner(
+        {"Title", "CounterID", "EventDate", "DontCountHits", "IsRefresh"});
+    exe::ExprPtr Title = std::make_shared<ColumnRef>("Title");
+    exe::ExprPtr CounterID = std::make_shared<ColumnRef>("CounterID");
+    exe::ExprPtr EventDate = std::make_shared<ColumnRef>("EventDate");
+    exe::ExprPtr DontCountHits = std::make_shared<ColumnRef>("DontCountHits");
+    exe::ExprPtr IsRefresh = std::make_shared<ColumnRef>("IsRefresh");
+
+    exe::ExprPtr CounterID_62 = std::make_shared<BinaryCmp>(
+        CounterID,
+        CmpType::Eq,
+        std::make_shared<Literal<int32_t>>(62, Types::kInt32_t));
+
+    exe::ExprPtr EventDate_Geq = std::make_shared<BinaryCmp>(
+        EventDate,
+        CmpType::Geq,
+        std::make_shared<Literal<int32_t>>(DaysCount("2013-07-01"),
+                                           Types::kDate));
+
+    exe::ExprPtr EventDate_Leq = std::make_shared<BinaryCmp>(
+        EventDate,
+        CmpType::Leq,
+        std::make_shared<Literal<int32_t>>(DaysCount("2013-07-31"),
+                                           Types::kDate));
+
+    exe::ExprPtr DontCountHits_0 = std::make_shared<BinaryCmp>(
+        DontCountHits,
+        CmpType::Eq,
+        std::make_shared<Literal<int16_t>>(0, Types::kInt16_t));
+
+    exe::ExprPtr IsRefresh_0 = std::make_shared<BinaryCmp>(
+        IsRefresh,
+        CmpType::Eq,
+        std::make_shared<Literal<int16_t>>(0, Types::kInt16_t));
+
+    exe::ExprPtr Title_Neq = std::make_shared<BinaryCmp>(
+        Title,
+        CmpType::Neq,
+        std::make_shared<Literal<std::string>>("", Types::kString));
+
+    exe::ExprPtr And1 = std::make_shared<BinaryFunc>(CounterID_62,
+                                                     FuncType::And,
+                                                     EventDate_Geq);
+    exe::ExprPtr And2 =
+        std::make_shared<BinaryFunc>(And1, FuncType::And, EventDate_Leq);
+    exe::ExprPtr And3 =
+        std::make_shared<BinaryFunc>(And2, FuncType::And, DontCountHits_0);
+    exe::ExprPtr And4 =
+        std::make_shared<BinaryFunc>(And3, FuncType::And, IsRefresh_0);
+    exe::ExprPtr And5 =
+        std::make_shared<BinaryFunc>(And4, FuncType::And, Title_Neq);
+
+    exe::OperPtr filter = std::make_shared<FilterOperator>(scan, And5);
+
+    exe::OperPtr group_by = std::make_shared<GroupByOperator>(
+        filter,
+        std::vector<AggregateType>{AggregateType::Count},
+        std::vector<exe::ExprPtr>{Title},
+        std::vector<exe::ExprPtr>{Title});
+
+    exe::ExprPtr c = std::make_shared<ColumnRef>("count_Title");
+    exe::OperPtr order_by_limit =
+        std::make_shared<OrderByLimitOperator>(group_by, c, 10);
+
+    CsvWriter csv_w(&res_file);
+    csv_w.WriteBatch(*order_by_limit->Next());
 }
 void Execute38() {
     DLOG(INFO) << "38th que is not supported: AND filters and OFFSET";
@@ -598,8 +948,29 @@ void Execute42() {
         << "42nd que is not supported: DATE_TRUNC, AND filters and OFFSET";
 }
 
+void my_handler() {  // gemini handler
+    std::signal(SIGABRT, SIG_DFL);
+
+    auto eptr = std::current_exception();
+    if (eptr) {
+        try {
+            std::rethrow_exception(eptr);
+        } catch (const std::exception& e) {
+            LOG(ERROR) << "Uncaught exception: " << e.what();
+        } catch (...) {
+            LOG(ERROR) << "Unknown exception";
+        }
+    }
+
+    LOG(ERROR) << boost::stacktrace::stacktrace();
+    google::FlushLogFiles(google::GLOG_ERROR);  // важно!
+
+    std::abort();  // теперь без рекурсии
+}
+
 void my_handler(int signum) {  // gemini handler
     DLOG(INFO) << boost::stacktrace::stacktrace();
+    google::FlushLogFiles(google::INFO);  // флаш glog
     std::exit(signum);
 }
 
@@ -616,13 +987,15 @@ int main(int, char** argv) {
     // argv[0], que_num, columnar, output, logs
     google::InitGoogleLogging(argv[0]);
     FLAGS_alsologtostderr = true;
+    std::set_terminate(my_handler);
     for (int sig : {SIGSEGV, SIGABRT, SIGFPE, SIGILL}) {
         std::signal(sig, my_handler);
     }
     maformat_file =
         std::fstream(argv[2], std::ios::out | std::ios::in | std::ios::binary);
-    res_file = std::fstream(argv[3], std::ios::out | std::ios::in |
-                                         std::ios::trunc | std::ios::binary);
+    res_file = std::fstream(
+        argv[3],
+        std::ios::out | std::ios::in | std::ios::trunc | std::ios::binary);
     size_t idx = std::stoi(argv[1]);
     if (idx < executors.size()) {
         executors[idx]();
