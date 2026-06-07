@@ -2,6 +2,7 @@
 #include <cstdlib>
 #include <exception>
 #include <functional>
+#include <optional>
 #include <string>
 #include "core/batch.h"
 #include "core/column.h"
@@ -578,11 +579,78 @@ void Execute26() {
     DLOG(INFO) << "26th que is not supported: ORDER BY multiple columns";
 }
 void Execute27() {
-    DLOG(INFO) << "27th que is not supported: length() and HAVING";
+    DLOG(INFO) << "27th que";
+    exe::OperPtr scan = GetScanner({"CounterID", "URL"});
+    exe::ExprPtr CounterID = std::make_shared<ColumnRef>("CounterID");
+    exe::ExprPtr URL = std::make_shared<ColumnRef>("URL");
+    exe::ExprPtr EmptyLiteral =
+        std::make_shared<Literal<std::string>>("", Types::kString);
+    exe::ExprPtr UrlNotEmpty =
+        std::make_shared<BinaryCmp>(URL, CmpType::Neq, EmptyLiteral);
+    exe::OperPtr filter = std::make_shared<FilterOperator>(scan, UrlNotEmpty);
+
+    exe::ExprPtr UrlLength = std::make_shared<Length>(URL, "length_URL");
+    exe::OperPtr group_by = std::make_shared<GroupByOperator>(
+        filter,
+        std::vector<AggregateType>{AggregateType::Avg, AggregateType::Count},
+        std::vector<exe::ExprPtr>{UrlLength, URL},
+        std::vector<exe::ExprPtr>{CounterID});
+
+    exe::ExprPtr CountUrl = std::make_shared<ColumnRef>("count_URL");
+    exe::ExprPtr HavingLiteral =
+        std::make_shared<Literal<int64_t>>(100000, Types::kInt64_t);
+    exe::ExprPtr Having =
+        std::make_shared<BinaryCmp>(CountUrl, CmpType::G, HavingLiteral);
+    exe::OperPtr having_filter =
+        std::make_shared<FilterOperator>(group_by, Having);
+
+    exe::ExprPtr AvgLength = std::make_shared<ColumnRef>("avg_length_URL");
+    exe::OperPtr order_by_limit =
+        std::make_shared<OrderByLimitOperator>(having_filter, AvgLength, 25);
+
+    CsvWriter csv_w(&res_file);
+    csv_w.WriteBatch(*order_by_limit->Next());
 }
 void Execute28() {
-    DLOG(INFO)
-        << "28th que is not supported: REGEXP_REPLACE, length() and HAVING";
+    DLOG(INFO) << "28th que";
+    exe::OperPtr scan = GetScanner({"Referer"});
+    exe::ExprPtr Referer = std::make_shared<ColumnRef>("Referer");
+    exe::ExprPtr EmptyLiteral =
+        std::make_shared<Literal<std::string>>("", Types::kString);
+    exe::ExprPtr RefererNotEmpty =
+        std::make_shared<BinaryCmp>(Referer, CmpType::Neq, EmptyLiteral);
+    exe::OperPtr filter =
+        std::make_shared<FilterOperator>(scan, RefererNotEmpty);
+
+    exe::ExprPtr Host =
+        std::make_shared<RegexpReplace>(Referer,
+                                        "^https?://(?:www\\.)?([^/]+)/.*$",
+                                        "\\1",
+                                        "k");
+    exe::ExprPtr RefererLength =
+        std::make_shared<Length>(Referer, "length_Referer");
+    exe::OperPtr group_by = std::make_shared<GroupByOperator>(
+        filter,
+        std::vector<AggregateType>{AggregateType::Avg,
+                                   AggregateType::Count,
+                                   AggregateType::Min},
+        std::vector<exe::ExprPtr>{RefererLength, Referer, Referer},
+        std::vector<exe::ExprPtr>{Host});
+
+    exe::ExprPtr CountReferer = std::make_shared<ColumnRef>("count_Referer");
+    exe::ExprPtr HavingLiteral =
+        std::make_shared<Literal<int64_t>>(100000, Types::kInt64_t);
+    exe::ExprPtr Having =
+        std::make_shared<BinaryCmp>(CountReferer, CmpType::G, HavingLiteral);
+    exe::OperPtr having_filter =
+        std::make_shared<FilterOperator>(group_by, Having);
+
+    exe::ExprPtr AvgLength = std::make_shared<ColumnRef>("avg_length_Referer");
+    exe::OperPtr order_by_limit =
+        std::make_shared<OrderByLimitOperator>(having_filter, AvgLength, 25);
+
+    CsvWriter csv_w(&res_file);
+    csv_w.WriteBatch(*order_by_limit->Next());
 }
 void Execute29() {
     DLOG(INFO) << "29th que";
@@ -1005,7 +1073,87 @@ void Execute38() {
     csv_w.WriteBatch(*offset_op->Next());
 }
 void Execute39() {
-    DLOG(INFO) << "39th que is not supported: CASE, AND filters and OFFSET";
+    DLOG(INFO) << "39th que";
+    exe::OperPtr scan = GetScanner({"TraficSourceID",
+                                    "SearchEngineID",
+                                    "AdvEngineID",
+                                    "Referer",
+                                    "URL",
+                                    "CounterID",
+                                    "EventDate",
+                                    "IsRefresh"});
+    exe::ExprPtr TraficSourceID = std::make_shared<ColumnRef>("TraficSourceID");
+    exe::ExprPtr SearchEngineID = std::make_shared<ColumnRef>("SearchEngineID");
+    exe::ExprPtr AdvEngineID = std::make_shared<ColumnRef>("AdvEngineID");
+    exe::ExprPtr Referer = std::make_shared<ColumnRef>("Referer");
+    exe::ExprPtr URL = std::make_shared<ColumnRef>("URL");
+    exe::ExprPtr CounterID = std::make_shared<ColumnRef>("CounterID");
+    exe::ExprPtr EventDate = std::make_shared<ColumnRef>("EventDate");
+    exe::ExprPtr IsRefresh = std::make_shared<ColumnRef>("IsRefresh");
+
+    exe::ExprPtr CounterID_62 = std::make_shared<BinaryCmp>(
+        CounterID,
+        CmpType::Eq,
+        std::make_shared<Literal<int32_t>>(62, Types::kInt32_t));
+    exe::ExprPtr EventDate_Geq = std::make_shared<BinaryCmp>(
+        EventDate,
+        CmpType::Geq,
+        std::make_shared<Literal<int32_t>>(DaysCount("2013-07-01"),
+                                           Types::kDate));
+    exe::ExprPtr EventDate_Leq = std::make_shared<BinaryCmp>(
+        EventDate,
+        CmpType::Leq,
+        std::make_shared<Literal<int32_t>>(DaysCount("2013-07-31"),
+                                           Types::kDate));
+    exe::ExprPtr IsRefresh_0 = std::make_shared<BinaryCmp>(
+        IsRefresh,
+        CmpType::Eq,
+        std::make_shared<Literal<int16_t>>(0, Types::kInt16_t));
+
+    exe::ExprPtr And1 = std::make_shared<BinaryFunc>(CounterID_62,
+                                                     FuncType::And,
+                                                     EventDate_Geq);
+    exe::ExprPtr And2 =
+        std::make_shared<BinaryFunc>(And1, FuncType::And, EventDate_Leq);
+    exe::ExprPtr And3 =
+        std::make_shared<BinaryFunc>(And2, FuncType::And, IsRefresh_0);
+
+    exe::OperPtr filter = std::make_shared<FilterOperator>(scan, And3);
+
+    exe::ExprPtr SearchEngineID_0 = std::make_shared<BinaryCmp>(
+        SearchEngineID,
+        CmpType::Eq,
+        std::make_shared<Literal<int16_t>>(0, Types::kInt16_t));
+    exe::ExprPtr AdvEngineID_0 = std::make_shared<BinaryCmp>(
+        AdvEngineID,
+        CmpType::Eq,
+        std::make_shared<Literal<int16_t>>(0, Types::kInt16_t));
+    exe::ExprPtr CasePredicate = std::make_shared<BinaryFunc>(SearchEngineID_0,
+                                                              FuncType::And,
+                                                              AdvEngineID_0);
+    exe::ExprPtr EmptyLiteral =
+        std::make_shared<Literal<std::string>>("", Types::kString);
+    exe::ExprPtr Src =
+        std::make_shared<Case>(CasePredicate, Referer, EmptyLiteral, "Src");
+
+    exe::OperPtr group_by = std::make_shared<GroupByOperator>(
+        filter,
+        std::vector<AggregateType>{AggregateType::Count},
+        std::vector<exe::ExprPtr>{URL},
+        std::vector<exe::ExprPtr>{TraficSourceID,
+                                  SearchEngineID,
+                                  AdvEngineID,
+                                  Src,
+                                  URL});
+
+    exe::ExprPtr PageViews = std::make_shared<ColumnRef>("count_URL");
+    exe::OperPtr order_by_limit =
+        std::make_shared<OrderByLimitOperator>(group_by, PageViews, 10 + 1000);
+    exe::OperPtr offset_op =
+        std::make_shared<OffsetOperator>(order_by_limit, 1000);
+
+    CsvWriter csv_w(&res_file);
+    csv_w.WriteBatch(*offset_op->Next());
 }
 void Execute40() {
     DLOG(INFO) << "40th que";
@@ -1173,7 +1321,11 @@ void Execute41() {
         std::make_shared<OffsetOperator>(order_by_limit, 10000);
 
     CsvWriter csv_w(&res_file);
-    csv_w.WriteBatch(*offset_op->Next());
+    std::optional<Batch> res = offset_op->Next();
+    if (!res.has_value()) {
+        return;
+    }
+    csv_w.WriteBatch(*res);
 }
 void Execute42() {
     DLOG(INFO) << "42nd que";
@@ -1245,7 +1397,11 @@ void Execute42() {
         std::make_shared<OffsetOperator>(order_by_limit, 1000);
 
     CsvWriter csv_w(&res_file);
-    csv_w.WriteBatch(*offset_op->Next());
+    std::optional<Batch> res = offset_op->Next();
+    if (!res.has_value()) {
+        return;
+    }
+    csv_w.WriteBatch(*res);
 }
 
 void my_handler() {  // gemini handler

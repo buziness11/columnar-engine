@@ -308,6 +308,10 @@ std::optional<Batch> GroupByOperator::Next() {
     out_names_keys.insert(out_names_keys.end(),
                           out_names_agg.begin(),
                           out_names_agg.end());
+    // DLOG(INFO) << "group by out batch names";
+    // for (auto& name : out_names_keys) {
+    //     DLOG(INFO) << name;
+    // }
     return Batch(Schema(out_names_keys, out_key_types), std::move(res_keys));
 }
 
@@ -330,6 +334,10 @@ OrderByOperator::OrderByOperator(std::shared_ptr<IOperator> child,
 }
 
 std::optional<Batch> OrderByOperator::Next() {
+    if (!child_->Next().has_value()) {
+        return std::nullopt;
+    }
+
     std::shared_ptr<MultiMapBase> res_map_ptr;
     std::optional<Batch> nw = child_->Next();
     Column order_cl = keys_->Evaluate(*nw);
@@ -392,8 +400,12 @@ OrderByLimitOperator::OrderByLimitOperator(std::shared_ptr<IOperator> child,
 }
 
 std::optional<Batch> OrderByLimitOperator::Next() {
-    std::shared_ptr<MultiMapBase> res_map_ptr;
     std::optional<Batch> nw = child_->Next();
+    if (!nw.has_value()) {
+        return std::nullopt;
+    }
+
+    std::shared_ptr<MultiMapBase> res_map_ptr;
     Column order_cl = keys_->Evaluate(*nw);
     DispatchColumnHelper(order_cl.GetType(), [&res_map_ptr]<Types Src>() {
         using cpptype = typename EnumToCpp<Src>::Type;
@@ -488,16 +500,23 @@ OffsetOperator::OffsetOperator(std::shared_ptr<IOperator> child, size_t offset)
 
 std::optional<Batch> OffsetOperator::Next() {
     size_t count = 0;
+    bool has_rows = false;
     Batch res;
     while (std::optional<Batch> nw = child_->Next()) {
-        for (size_t i = 0; i < nw->GetColumnSize() && count >= offset_;
-             ++i, ++count) {
-            if (count == offset_) {
+        for (size_t i = 0; i < nw->GetColumnSize(); ++i, ++count) {
+            if (count < offset_) {
+                continue;
+            }
+            if (!has_rows) {
                 res = nw->GetRow(i);
-            } else if (count > offset_) {
+                has_rows = true;
+            } else {
                 res.MergeWithOtherBatch(nw->GetRow(i));
             }
         }
+    }
+    if (!has_rows) {
+        return std::nullopt;
     }
     return res;
 }

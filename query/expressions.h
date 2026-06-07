@@ -146,3 +146,49 @@ private:
     Trunc trunc_;
     std::string name_;
 };
+
+class Length : public IExpression {
+public:
+    Length(std::shared_ptr<IExpression>, const std::string& name = "");
+    ~Length() override = default;
+    Column Evaluate(const Batch&) override;
+    std::string GetName() const override;
+
+private:
+    std::shared_ptr<IExpression> child_;
+    std::string name_;
+};
+
+class Case : public IExpression {
+public:
+    Case(std::shared_ptr<IExpression> child_predicate,
+         std::shared_ptr<IExpression> child_true,
+         std::shared_ptr<IExpression> child_false,
+         const std::string& name = "");
+    ~Case() override = default;
+    Column Evaluate(const Batch&) override;
+    std::string GetName() const override;
+
+private:
+    std::shared_ptr<IExpression> child_predicate_;
+    std::shared_ptr<IExpression> child_true_;
+    std::shared_ptr<IExpression> child_false_;
+    std::string name_;
+};
+
+class RegexpReplace : public IExpression {
+public:
+    RegexpReplace(std::shared_ptr<IExpression> child,
+                  const std::string& pattern,
+                  const std::string& replacement,
+                  const std::string& name = "");
+    ~RegexpReplace() override = default;
+    Column Evaluate(const Batch&) override;
+    std::string GetName() const override;
+
+private:
+    std::shared_ptr<IExpression> child_;
+    std::string pattern_;
+    std::string replacement_;
+    std::string name_;
+};

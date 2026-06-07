@@ -1,0 +1,87 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 430" font-family="Inter,-apple-system,system-ui,sans-serif">
+<defs>
+  <marker id="arr" markerWidth="6" markerHeight="4" refX="6" refY="2" orient="auto">
+    <path d="M0,0 L6,2 L0,4" fill="none" stroke="#2a2a2a" stroke-width="1"/>
+  </marker>
+  <marker id="aw" markerWidth="6" markerHeight="4" refX="6" refY="2" orient="auto">
+    <path d="M0,0 L6,2 L0,4" fill="none" stroke="#A07840" stroke-width="1"/>
+  </marker>
+  <marker id="ab" markerWidth="6" markerHeight="4" refX="6" refY="2" orient="auto">
+    <path d="M0,0 L6,2 L0,4" fill="none" stroke="#4A7FB5" stroke-width="1"/>
+  </marker>
+</defs>
+
+<rect width="900" height="430" fill="#f8f7f4"/>
+
+<text x="450" y="34" text-anchor="middle" font-size="16" font-weight="600" fill="#1a1a1a" letter-spacing="-0.3">Итоговый план исполнения запроса</text>
+<text x="450" y="52" text-anchor="middle" font-size="10" fill="#777">pull-based pipeline: каждый оператор вызывает Next() у child</text>
+
+<!-- SQLдава example -->
+<rect x="68" y="72" width="764" height="38" rx="7" fill="#fff" stroke="#d5d2cc" stroke-width="0.8"/>
+<text x="450" y="96" text-anchor="middle" font-size="11" fill="#444">SELECT CounterID, count(*) FROM hits WHERE URL LIKE "market" GROUP BY CounterID ORDER BY count DESC LIMIT 10</text>
+
+<!-- Pipeline container -->
+<rect x="48" y="132" width="804" height="150" rx="8" fill="#F0E6D2" stroke="#D4C0A0" stroke-width="1"/>
+<text x="64" y="152" font-size="11" font-weight="600" fill="#7A6030">IOperator pipeline</text>
+
+<!-- Source -->
+<rect x="70" y="178" width="120" height="58" rx="7" fill="#D8ECDD" stroke="#9CC5A6" stroke-width="1"/>
+<text x="130" y="199" text-anchor="middle" font-size="10" font-weight="600" fill="#3A6E48">BZN file</text>
+<text x="130" y="213" text-anchor="middle" font-size="8" fill="#6A9F78">columnar storage</text>
+<text x="130" y="225" text-anchor="middle" font-size="8" fill="#6A9F78">batches</text>
+
+<!-- Operators -->
+<rect x="220" y="178" width="110" height="58" rx="7" fill="#fff" stroke="#D4C0A0" stroke-width="1"/>
+<text x="275" y="199" text-anchor="middle" font-size="10" font-weight="600" fill="#7A6030">Scan</text>
+<text x="275" y="213" text-anchor="middle" font-size="8" fill="#A89070">BZNReader</text>
+<text x="275" y="225" text-anchor="middle" font-size="8" fill="#A89070">columns</text>
+
+<rect x="360" y="178" width="110" height="58" rx="7" fill="#fff" stroke="#D4C0A0" stroke-width="1"/>
+<text x="415" y="199" text-anchor="middle" font-size="10" font-weight="600" fill="#7A6030">Filter</text>
+<text x="415" y="213" text-anchor="middle" font-size="8" fill="#A89070">predicate AST</text>
+<text x="415" y="225" text-anchor="middle" font-size="8" fill="#A89070">bool mask</text>
+
+<rect x="500" y="178" width="125" height="58" rx="7" fill="#fff" stroke="#D4C0A0" stroke-width="1"/>
+<text x="562" y="199" text-anchor="middle" font-size="10" font-weight="600" fill="#7A6030">GroupBy</text>
+<text x="562" y="213" text-anchor="middle" font-size="8" fill="#A89070">key: CounterID</text>
+<text x="562" y="225" text-anchor="middle" font-size="8" fill="#A89070">CountState</text>
+
+<rect x="655" y="178" width="125" height="58" rx="7" fill="#fff" stroke="#D4C0A0" stroke-width="1"/>
+<text x="717" y="199" text-anchor="middle" font-size="10" font-weight="600" fill="#7A6030">OrderByLimit</text>
+<text x="717" y="213" text-anchor="middle" font-size="8" fill="#A89070">key: count</text>
+<text x="717" y="225" text-anchor="middle" font-size="8" fill="#A89070">limit: 10</text>
+
+<!-- Result -->
+<rect x="385" y="300" width="130" height="50" rx="7" fill="#DAEAF5" stroke="#A8C8E0" stroke-width="1"/>
+<text x="450" y="321" text-anchor="middle" font-size="10" font-weight="600" fill="#3A6A8A">Result Batch</text>
+<text x="450" y="335" text-anchor="middle" font-size="8" fill="#6A9AB8">CounterID, count</text>
+
+<!-- data arrows left to right -->
+<line x1="190" y1="207" x2="218" y2="207" stroke="#2a2a2a" stroke-width="1" marker-end="url(#arr)"/>
+<line x1="330" y1="207" x2="358" y2="207" stroke="#2a2a2a" stroke-width="1" marker-end="url(#arr)"/>
+<line x1="470" y1="207" x2="498" y2="207" stroke="#2a2a2a" stroke-width="1" marker-end="url(#arr)"/>
+<line x1="625" y1="207" x2="653" y2="207" stroke="#2a2a2a" stroke-width="1" marker-end="url(#arr)"/>
+
+<!-- result arrow -->
+<path d="M717,236 L717,260 L450,260 L450,298" fill="none" stroke="#4A7FB5" stroke-width="1" marker-end="url(#ab)"/>
+
+<!-- pull calls -->
+<path d="M707,170 L707,158 L570,158 L570,176" fill="none" stroke="#A07840" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#aw)"/>
+<path d="M552,170 L552,158 L423,158 L423,176" fill="none" stroke="#A07840" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#aw)"/>
+<path d="M405,170 L405,158 L283,158 L283,176" fill="none" stroke="#A07840" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#aw)"/>
+<text x="590" y="146" font-size="8" fill="#A07840">child.Next()</text>
+<text x="445" y="146" font-size="8" fill="#A07840">child.Next()</text>
+<text x="310" y="146" font-size="8" fill="#A07840">child.Next()</text>
+<text x="68" y="270" font-size="9" fill="#A07840">верхний оператор тянет данные снизу по цепочке child.Next()</text>
+
+<!-- bottom notes -->
+<rect x="68" y="372" width="225" height="30" rx="6" fill="#DAEAF5" stroke="#A8C8E0" stroke-width="0.8"/>
+<text x="180" y="391" text-anchor="middle" font-size="8" fill="#3A6A8A">Batch: порция колонок до kBatchRowSize строк</text>
+
+<rect x="338" y="372" width="225" height="30" rx="6" fill="#D8ECDD" stroke="#9CC5A6" stroke-width="0.8"/>
+<text x="450" y="391" text-anchor="middle" font-size="8" fill="#3A6E48">BZNReader читает только нужные колонки</text>
+
+<rect x="608" y="372" width="225" height="30" rx="6" fill="#F0E6D2" stroke="#D4C0A0" stroke-width="0.8"/>
+<text x="720" y="391" text-anchor="middle" font-size="8" fill="#7A6030">std::nullopt завершает поток данных</text>
+
+</svg>

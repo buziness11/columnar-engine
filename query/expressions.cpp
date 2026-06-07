@@ -7,6 +7,7 @@
 #include <type_traits>
 #include <utility>
 #include <variant>
+#include <boost/regex.hpp>
 #include "core/column.h"
 #include "core/datatype.h"
 #include "core/types.h"
@@ -282,5 +283,112 @@ Column TruncateTime::Evaluate(const Batch& b) {
 }
 
 std::string TruncateTime::GetName() const {
+    return name_;
+}
+
+Length::Length(std::shared_ptr<IExpression> child, const std::string& name)
+    : child_(child), name_(name) {
+}
+
+Column Length::Evaluate(const Batch& b) {
+    Column c = child_->Evaluate(b);
+    if (c.GetType() != Types::kString) {
+        DLOG(ERROR) << "Cannot get length of non-string type";
+        throw std::runtime_error("Length: non-string type");
+    }
+    std::vector<std::string> strs =
+        std::move(std::get<std::vector<std::string>>(std::move(c.GetData())));
+    std::vector<int32_t> res(strs.size());
+    for (size_t i = 0; i < strs.size(); ++i) {
+        res[i] = static_cast<int32_t>(strs[i].size());
+    }
+    return Column(std::move(res), Types::kInt32_t);
+}
+
+std::string Length::GetName() const {
+    return name_;
+}
+
+Case::Case(std::shared_ptr<IExpression> child_predicate,
+           std::shared_ptr<IExpression> child_true,
+           std::shared_ptr<IExpression> child_false,
+           const std::string& name)
+    : child_predicate_(child_predicate),
+      child_true_(child_true),
+      child_false_(child_false),
+      name_(name) {
+}
+
+Column Case::Evaluate(const Batch& b) {
+    Column predicate = child_predicate_->Evaluate(b);
+    Column when_true = child_true_->Evaluate(b);
+    Column when_false = child_false_->Evaluate(b);
+
+    if (predicate.GetType() != Types::kBool) {
+        DLOG(ERROR) << "Case predicate must be bool";
+        throw std::runtime_error("Case: predicate must be bool");
+    }
+    if (when_true.GetType() != when_false.GetType()) {
+        DLOG(ERROR) << "Case branches must have same type";
+        throw std::runtime_error("Case: branch types differ");
+    }
+    if (predicate.GetSize() != when_true.GetSize() ||
+        predicate.GetSize() != when_false.GetSize()) {
+        DLOG(ERROR) << "Case branch sizes differ";
+        throw std::runtime_error("Case: branch sizes differ");
+    }
+
+    std::vector<bool> pred =
+        std::move(std::get<std::vector<bool>>(std::move(predicate.GetData())));
+    Column res;
+    DispatchColumnHelper(
+        when_true.GetType(),
+        [&when_true, &when_false, &pred, &res]<Types T>() {
+            using CppType = typename EnumToCpp<T>::Type;
+            std::vector<CppType> true_values = std::move(
+                std::get<std::vector<CppType>>(std::move(when_true.GetData())));
+            std::vector<CppType> false_values =
+                std::move(std::get<std::vector<CppType>>(
+                    std::move(when_false.GetData())));
+            std::vector<CppType> out;
+            out.reserve(pred.size());
+            for (size_t i = 0; i < pred.size(); ++i) {
+                out.emplace_back(pred[i] ? true_values[i] : false_values[i]);
+            }
+            res = Column(std::move(out), T);
+        });
+    return res;
+}
+
+std::string Case::GetName() const {
+    return name_;
+}
+
+RegexpReplace::RegexpReplace(std::shared_ptr<IExpression> child,
+                             const std::string& pattern,
+                             const std::string& replacement,
+                             const std::string& name)
+    : child_(child), pattern_(pattern), replacement_(replacement), name_(name) {
+}
+
+Column RegexpReplace::Evaluate(const Batch& b) {
+    Column c = child_->Evaluate(b);
+    if (c.GetType() != Types::kString) {
+        DLOG(ERROR) << "RegexpReplace works only with strings";
+        throw std::runtime_error("RegexpReplace: non-string type");
+    }
+
+    boost::regex expr(pattern_);
+    std::vector<std::string> strs =
+        std::move(std::get<std::vector<std::string>>(std::move(c.GetData())));
+    std::vector<std::string> res;
+    res.reserve(strs.size());
+    for (const auto& s : strs) {
+        res.emplace_back(boost::regex_replace(s, expr, replacement_));
+    }
+    return Column(std::move(res), Types::kString);
+}
+
+std::string RegexpReplace::GetName() const {
     return name_;
 }
