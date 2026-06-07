@@ -72,4 +72,6 @@ int64_t TruncateTimestamp(int64_t seconds, Trunc trunc) {
         case Trunc::KYears:
             return seconds / kSecondsPerDay / 512 * kSecondsPerDay * 512;
     }
+    DLOG(ERROR) << "Wrong trunc type";
+    throw std::exception();
 }
