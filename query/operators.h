@@ -77,7 +77,8 @@ private:
 class OrderByOperator : public IOperator {
 public:
     OrderByOperator(std::shared_ptr<IOperator> child,
-                    std::shared_ptr<IExpression> keys, bool desc = true);
+                    std::shared_ptr<IExpression> keys,
+                    bool desc = true);
     std::optional<Batch> Next() override;
 
 private:
@@ -89,7 +90,8 @@ private:
 class OrderByLimitOperator : public IOperator {
 public:
     OrderByLimitOperator(std::shared_ptr<IOperator> child,
-                         std::shared_ptr<IExpression> keys, size_t limit,
+                         std::shared_ptr<IExpression> keys,
+                         size_t limit,
                          bool desc = true);
     std::optional<Batch> Next() override;
 
@@ -108,4 +110,14 @@ public:
 private:
     std::shared_ptr<IOperator> child_;
     size_t limit_;
+};
+
+class OffsetOperator : public IOperator {
+public:
+    OffsetOperator(std::shared_ptr<IOperator> child, size_t offset);
+    std::optional<Batch> Next() override;
+
+private:
+    std::shared_ptr<IOperator> child_;
+    size_t offset_;
 };

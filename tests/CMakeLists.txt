@@ -1,10 +1,12 @@
 add_executable(test_csv test_csv.cpp)
 add_executable(test_format test_format.cpp)
 add_executable(bench_rw_hits bench_rw_hits.cpp)
+add_executable(bench_read_columns bench_read_columns.cpp)
 
 target_link_libraries(test_csv PRIVATE engine_lib GTest::gtest_main)
 target_link_libraries(test_format PRIVATE engine_lib GTest::gtest_main)
 target_link_libraries(bench_rw_hits PRIVATE engine_lib GTest::gtest_main)
+target_link_libraries(bench_read_columns PRIVATE engine_lib benchmark::benchmark)
 
 add_test(NAME CSVReaderTests COMMAND test_csv)
 add_test(NAME MyFormatTests COMMAND test_format)
@@ -18,6 +20,10 @@ target_compile_definitions(test_format PRIVATE
     TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data/"
 )
 
-target_compile_definitions(bench_rw_hits PRIVATE 
+target_compile_definitions(bench_rw_hits PRIVATE
+    TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data/"
+)
+
+target_compile_definitions(bench_read_columns PRIVATE
     TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data/"
 )

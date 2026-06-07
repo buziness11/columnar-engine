@@ -1,0 +1,80 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 460 602" font-family="Inter,-apple-system,system-ui,sans-serif">
+
+<rect width="460" height="602" fill="#f8f7f4"/>
+
+<text x="230" y="30" text-anchor="middle" font-size="16" font-weight="600" fill="#1a1a1a" letter-spacing="-0.3">Формат BZN</text>
+<text x="230" y="46" text-anchor="middle" font-size="10" fill="#777">колоночное хранилище</text>
+
+<!-- Outer green file container -->
+<rect x="24" y="62" width="412" height="522" rx="8" fill="#D8ECDD" stroke="#9CC5A6" stroke-width="1.2"/>
+
+<!-- offset labels on the left -->
+<text x="16" y="82" text-anchor="end" font-size="8" fill="#aaa">0</text>
+<text x="16" y="118" text-anchor="end" font-size="8" fill="#aaa">8</text>
+
+<!-- meta_size block — same width as batches -->
+<rect x="48" y="70" width="364" height="38" rx="6" fill="#fff" stroke="#9CC5A6" stroke-width="0.8"/>
+<text x="230" y="87" text-anchor="middle" font-size="11" font-weight="600" fill="#3A6E48">meta_size</text>
+<text x="230" y="100" text-anchor="middle" font-size="8" fill="#5A8F6A">int64, 8 байт — смещение метаданных от EOF</text>
+
+<!-- BATCH 0 (expanded) -->
+<rect x="48" y="118" width="364" height="195" rx="6" fill="#DAEAF5" stroke="#A8C8E0" stroke-width="0.8"/>
+<text x="64" y="136" font-size="10" font-weight="600" fill="#3A6A8A">BATCH_0</text>
+
+<rect x="64" y="144" width="332" height="26" rx="4" fill="#fff" stroke="#A8C8E0" stroke-width="0.7"/>
+<text x="74" y="161" font-size="9" font-weight="500" fill="#3A6A8A">per_column_offsets[ncols]</text>
+<text x="386" y="161" text-anchor="end" font-size="8" fill="#6A9AB8">int64[]</text>
+
+<rect x="64" y="176" width="332" height="24" rx="4" fill="#fff" stroke="#A8C8E0" stroke-width="0.7"/>
+<text x="230" y="192" text-anchor="middle" font-size="9" fill="#4A7FB5">col_0 raw bytes</text>
+
+<rect x="64" y="206" width="332" height="24" rx="4" fill="#fff" stroke="#A8C8E0" stroke-width="0.7"/>
+<text x="230" y="222" text-anchor="middle" font-size="9" fill="#4A7FB5">col_1 raw bytes</text>
+
+<rect x="64" y="236" width="332" height="22" rx="4" fill="#fff" stroke="#A8C8E0" stroke-width="0.7"/>
+<text x="230" y="251" text-anchor="middle" font-size="10" fill="#4A7FB5">...</text>
+
+<rect x="64" y="264" width="332" height="24" rx="4" fill="#fff" stroke="#A8C8E0" stroke-width="0.7"/>
+<text x="230" y="280" text-anchor="middle" font-size="9" fill="#4A7FB5">col_m raw bytes</text>
+
+<rect x="64" y="294" width="332" height="14" rx="3" fill="#E8F2FA" stroke="none"/>
+<text x="230" y="304" text-anchor="middle" font-size="7" fill="#6A9AB8">500K строк на батч (kBatchRowSize)</text>
+
+<!-- BATCH 1 (collapsed) -->
+<rect x="48" y="322" width="364" height="44" rx="6" fill="#DAEAF5" stroke="#A8C8E0" stroke-width="0.8"/>
+<text x="64" y="340" font-size="10" font-weight="600" fill="#3A6A8A">BATCH_1</text>
+<text x="230" y="356" text-anchor="middle" font-size="9" fill="#6A9AB8">...</text>
+
+<!-- gap -->
+<rect x="48" y="374" width="364" height="44" rx="6" fill="#EDF4F9" stroke="#A8C8E0" stroke-width="0.5" stroke-dasharray="4,3"/>
+<text x="230" y="401" text-anchor="middle" font-size="14" fill="#6A9AB8">...</text>
+
+<!-- BATCH K (collapsed, same as BATCH 1) -->
+<rect x="48" y="426" width="364" height="44" rx="6" fill="#DAEAF5" stroke="#A8C8E0" stroke-width="0.8"/>
+<text x="64" y="444" font-size="10" font-weight="600" fill="#3A6A8A">BATCH_K</text>
+<text x="230" y="460" text-anchor="middle" font-size="9" fill="#6A9AB8">...</text>
+
+<!-- offset label: end - meta_size -->
+<text x="16" y="486" text-anchor="end" font-size="7" fill="#aaa">EOF -</text>
+<text x="16" y="496" text-anchor="end" font-size="7" fill="#aaa">meta</text>
+
+<!-- BZN Metadata block — same width as batches -->
+<rect x="48" y="480" width="364" height="94" rx="6" fill="#fff" stroke="#9CC5A6" stroke-width="0.8"/>
+<text x="64" y="496" font-size="10" font-weight="600" fill="#3A6E48">Метаданные BZN</text>
+
+<rect x="64" y="504" width="332" height="18" rx="3" fill="#f0f7f2" stroke="#9CC5A6" stroke-width="0.5"/>
+<text x="74" y="516" font-size="8" fill="#3A6E48">names</text>
+<text x="386" y="516" text-anchor="end" font-size="7" fill="#6A9F78">\x1F...\x1E</text>
+
+<rect x="64" y="526" width="332" height="18" rx="3" fill="#f0f7f2" stroke="#9CC5A6" stroke-width="0.5"/>
+<text x="74" y="538" font-size="8" fill="#3A6E48">types</text>
+<text x="386" y="538" text-anchor="end" font-size="7" fill="#6A9F78">\x1F...\x1E</text>
+
+<rect x="64" y="548" width="332" height="18" rx="3" fill="#f0f7f2" stroke="#9CC5A6" stroke-width="0.5"/>
+<text x="74" y="560" font-size="8" fill="#3A6E48">batch_offsets[k]</text>
+<text x="386" y="560" text-anchor="end" font-size="7" fill="#6A9F78">int64[]</text>
+
+<!-- offset label: EOF -->
+<text x="16" y="582" text-anchor="end" font-size="8" fill="#aaa">EOF</text>
+
+</svg>

@@ -1,13 +1,12 @@
 #include "core/datatype.h"
-#include "core/rwconsts.h"
 #include <algorithm>
 #include <array>
-#include <charconv>
 #include <cstdint>
 #include <exception>
 #include <format>
 #include <glog/logging.h>
 #include <string>
+#include "core/rwconsts.h"
 
 // В нашей таске нам неважно работать с чужими форматами
 // Нам важно поддерживать следующие операции
@@ -15,72 +14,6 @@
 // Поэтому поддерживаются следующие суждения
 // 1. В месяце 32 дня
 // 2. В году 512 дней
-
-int32_t inline GetSeconds(const std::string& yyyy_mm_dd_hh_mm_ss) {
-    int32_t second{};
-    std::from_chars(yyyy_mm_dd_hh_mm_ss.data() + 17,
-                    yyyy_mm_dd_hh_mm_ss.data() + 19,
-                    second);
-    return second;
-}
-
-int32_t inline GetMinutes(const std::string& yyyy_mm_dd_hh_mm_ss) {
-    int32_t minute{};
-    std::from_chars(yyyy_mm_dd_hh_mm_ss.data() + 14,
-                    yyyy_mm_dd_hh_mm_ss.data() + 16,
-                    minute);
-    return minute;
-}
-
-int32_t inline GetHours(const std::string& yyyy_mm_dd_hh_mm_ss) {
-    int32_t hour{};
-    std::from_chars(yyyy_mm_dd_hh_mm_ss.data() + 11,
-                    yyyy_mm_dd_hh_mm_ss.data() + 13,
-                    hour);
-    return hour;
-}
-
-int32_t inline GetDays(const std::string& yyyy_mm_dd_hh_mm_ss) {
-    int32_t day{};
-    std::from_chars(yyyy_mm_dd_hh_mm_ss.data() + 8,
-                    yyyy_mm_dd_hh_mm_ss.data() + 10,
-                    day);
-    return day;
-}
-
-int32_t inline GetMonths(const std::string& yyyy_mm_dd_hh_mm_ss) {
-    int32_t month{};
-    std::from_chars(yyyy_mm_dd_hh_mm_ss.data() + 5,
-                    yyyy_mm_dd_hh_mm_ss.data() + 7,
-                    month);
-    return month;
-}
-int32_t inline GetYears(const std::string& yyyy_mm_dd_hh_mm_ss) {
-    int32_t year{};
-    std::from_chars(yyyy_mm_dd_hh_mm_ss.data(),
-                    yyyy_mm_dd_hh_mm_ss.data() + 4,
-                    year);
-    return year;
-}
-
-int32_t inline GetSeconds(int64_t seconds) {
-    return seconds % 60;
-}
-int32_t inline GetMinutes(int64_t seconds) {
-    return (seconds / kSecondsPerMinute) % 60;
-}
-int32_t inline GetHours(int64_t seconds) {
-    return (seconds / kSecondsPerHour) % 24;
-}
-int32_t inline GetDays(int64_t seconds) {
-    return (seconds / kSecondsPerDay) % 32 + 1;
-}
-int32_t inline GetMonths(int64_t seconds) {
-    return (seconds / kSecondsPerDay) / 32 + 1;
-}
-int32_t inline GetYears(int64_t seconds) {
-    return (seconds / kSecondsPerDay) / 512 + 1970;
-}
 
 int32_t DaysCount(const std::string& yyyy_mm_dd) {
     int32_t year = GetYears(yyyy_mm_dd);
@@ -122,4 +55,23 @@ std::string GetYyyyMmDdHhMmSs(int64_t seconds) {
                        seconds / kSecondsPerHour,
                        (seconds % kSecondsPerHour) / kSecondsPerMinute,
                        seconds % kSecondsPerMinute);
+}
+
+int64_t TruncateTimestamp(int64_t seconds, Trunc trunc) {
+    switch (trunc) {
+        case Trunc::KSeconds:
+            return seconds;
+        case Trunc::KMinutes:
+            return seconds / kSecondsPerMinute * kSecondsPerMinute;
+        case Trunc::KHours:
+            return seconds / kSecondsPerHour * kSecondsPerHour;
+        case Trunc::KDays:
+            return seconds / kSecondsPerDay * kSecondsPerDay;
+        case Trunc::KMonths:
+            return seconds / kSecondsPerDay / 32 * kSecondsPerDay * 32;
+        case Trunc::KYears:
+            return seconds / kSecondsPerDay / 512 * kSecondsPerDay * 512;
+    }
+    DLOG(ERROR) << "Wrong trunc type";
+    throw std::exception();
 }
