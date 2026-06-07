@@ -152,23 +152,23 @@ Column BinaryFunc::Evaluate(const Batch& b) {
                     std::function<type_out(type_l, type_r)> ma_func;
                     switch (bin_func_type_) {
                         case FuncType::Plus:
-                            ma_func = [](type_l l, type_r r) {
-                                return static_cast<type_out>(l + r);
+                            ma_func = [](type_l lhs, type_r rhs) {
+                                return static_cast<type_out>(lhs + rhs);
                             };
                             break;
                         case FuncType::Minus:
-                            ma_func = [](type_l l, type_r r) {
-                                return static_cast<type_out>(l - r);
+                            ma_func = [](type_l lhs, type_r rhs) {
+                                return static_cast<type_out>(lhs - rhs);
                             };
                             break;
                         case FuncType::Or:
-                            ma_func = [](type_l l, type_r r) {
-                                return static_cast<type_out>(l | r);
+                            ma_func = [](type_l lhs, type_r rhs) {
+                                return static_cast<type_out>(lhs | rhs);
                             };
                             break;
                         case FuncType::And:
-                            ma_func = [](type_l l, type_r r) {
-                                return static_cast<type_out>(l & r);
+                            ma_func = [](type_l lhs, type_r rhs) {
+                                return static_cast<type_out>(lhs & rhs);
                             };
                             break;
                     }
